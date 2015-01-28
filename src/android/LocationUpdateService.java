@@ -685,7 +685,8 @@ public class LocationUpdateService extends Service implements LocationListener {
 	    pluginResult = new PluginResult(status, location);
 	    pluginResult.setKeepCallback(false);
 	    callbackContext.sendPluginResult(pluginResult);
-
+		
+	    return true;
 
         } catch (Throwable e) {
             Log.w(TAG, "Exception posting location: " + e);
@@ -693,6 +694,7 @@ public class LocationUpdateService extends Service implements LocationListener {
             return false;
         }
     }
+
     private void persistLocation(Location location) {
         LocationDAO dao = DAOFactory.createLocationDAO(this.getApplicationContext());
         com.tenforwardconsulting.cordova.bgloc.data.Location savedLocation = com.tenforwardconsulting.cordova.bgloc.data.Location.fromAndroidLocation(location);
