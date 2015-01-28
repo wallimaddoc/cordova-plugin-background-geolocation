@@ -1,5 +1,8 @@
 package com.tenforwardconsulting.cordova.bgloc;
 
+import org.apache.cordova.PluginResult;
+import org.apache.cordova.CallbackContext;
+
 import java.util.List;
 import java.util.Iterator;
 
