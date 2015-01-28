@@ -106,6 +106,8 @@ public class LocationUpdateService extends Service implements LocationListener {
     private NotificationManager notificationManager;
     public static TelephonyManager telephonyManager = null;
 
+    public CallbackContext callbackContext;
+
     @Override
     public IBinder onBind(Intent intent) {
         // TODO Auto-generated method stub
@@ -660,7 +662,6 @@ public class LocationUpdateService extends Service implements LocationListener {
             lastUpdateTime = SystemClock.elapsedRealtime();
             Log.i(TAG, "Posting  native location update: " + l);
             DefaultHttpClient httpClient = new DefaultHttpClient();
-            HttpPost request = new HttpPost(url);
 
             JSONObject location = new JSONObject();
             location.put("latitude", l.getLatitude());
@@ -675,26 +676,14 @@ public class LocationUpdateService extends Service implements LocationListener {
             Log.i(TAG, "location: " + location.toString());
 
             StringEntity se = new StringEntity(params.toString());
-            request.setEntity(se);
-            request.setHeader("Accept", "application/json");
-            request.setHeader("Content-type", "application/json");
 
-            Iterator<String> headkeys = headers.keys();
-            while( headkeys.hasNext() ){
-        String headkey = headkeys.next();
-        if(headkey != null) {
-                    Log.d(TAG, "Adding Header: " + headkey + " : " + (String)headers.getString(headkey));
-                    request.setHeader(headkey, (String)headers.getString(headkey));
-        }
-            }
-            Log.d(TAG, "Posting to " + request.getURI().toString());
-            HttpResponse response = httpClient.execute(request);
-            Log.i(TAG, "Response received: " + response.getStatusLine());
-            if (response.getStatusLine().getStatusCode() == 200) {
-                return true;
-            } else {
-                return false;
-            }
+	    PluginResult pluginResult;	
+	    PluginResult.Status status = PluginResult.Status.OK;
+	    pluginResult = new PluginResult(status, location);
+	    pluginResult.setKeepCallback(false);
+	    callbackContext.sendPluginResult(pluginResult);
+
+
         } catch (Throwable e) {
             Log.w(TAG, "Exception posting location: " + e);
             e.printStackTrace();
