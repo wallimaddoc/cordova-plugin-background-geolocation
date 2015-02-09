@@ -17,6 +17,10 @@
 #define acquiredLocationSound   1052
 #define locationErrorSound      1073
 
+NSString *const kAPPBackgroundJsNamespace = @"cordova.plugins.backgroundMode";
+NSString *const kAPPBackgroundEventActivate = @"activate";
+NSString *const kAPPBackgroundEventDeactivate = @"deactivate";
+NSString *const kAPPBackgroundEventFailure = @"failure";
 
 
 @implementation CDVBackgroundGeoLocation {
@@ -25,11 +29,6 @@
     BOOL isUpdatingLocation;
     BOOL stopOnTerminate;
 	
-	NSString *const kAPPBackgroundJsNamespace = @"cordova.plugins.backgroundMode";
-	NSString *const kAPPBackgroundEventActivate = @"activate";
-	NSString *const kAPPBackgroundEventDeactivate = @"deactivate";
-	NSString *const kAPPBackgroundEventFailure = @"failure";
-
     NSString *token;
     NSString *url;
     UIBackgroundTaskIdentifier bgTask;
