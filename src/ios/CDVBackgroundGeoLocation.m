@@ -17,10 +17,6 @@
 #define acquiredLocationSound   1052
 #define locationErrorSound      1073
 
-NSString *const kAPPBackgroundJsNamespace = @"cordova.plugins.backgroundMode";
-NSString *const kAPPBackgroundEventActivate = @"activate";
-NSString *const kAPPBackgroundEventDeactivate = @"deactivate";
-NSString *const kAPPBackgroundEventFailure = @"failure";
 
 
 @implementation CDVBackgroundGeoLocation {
@@ -28,7 +24,7 @@ NSString *const kAPPBackgroundEventFailure = @"failure";
     BOOL enabled;
     BOOL isUpdatingLocation;
     BOOL stopOnTerminate;
-	
+
     NSString *token;
     NSString *url;
     UIBackgroundTaskIdentifier bgTask;
@@ -400,7 +396,7 @@ NSString *const kAPPBackgroundEventFailure = @"failure";
         }
         [self setPace: isMoving];
     }
-    [self fireEvent:kAPPBackgroundEventActivate withParams:NULL];
+    [self fireEvent:@"activate" withParams:NULL];
 }
 /**@
  * Resume.  Turn background off
@@ -411,7 +407,7 @@ NSString *const kAPPBackgroundEventFailure = @"failure";
     if (enabled) {
         [self stopUpdatingLocation];
     }
-    [self fireEvent:kAPPBackgroundEventDeactivate withParams:NULL];
+    [self fireEvent:@"deactivate" withParams:NULL];
 }
 
 
@@ -787,13 +783,13 @@ NSString *const kAPPBackgroundEventFailure = @"failure";
  */
 - (void) fireEvent:(NSString*)event withParams:(NSString*)params
 {
-    NSString* active = [event isEqualToString:kAPPBackgroundEventActivate] ? @"true" : @"false";
+    NSString* active = [event isEqualToString:@"activate"] ? @"true" : @"false";
 
     NSString* flag = [NSString stringWithFormat:@"%@._isActive=%@;",
-                    kAPPBackgroundJsNamespace, active];
+                    @"cordova.plugins.backgroundMode", active];
 
     NSString* fn = [NSString stringWithFormat:@"setTimeout('%@.on%@(%@)',0);",
-                    kAPPBackgroundJsNamespace, event, params];
+                    @"cordova.plugins.backgroundMode", event, params];
 
     NSString* js = [flag stringByAppendingString:fn];
 
