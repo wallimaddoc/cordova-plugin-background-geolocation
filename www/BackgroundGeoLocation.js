@@ -12,12 +12,38 @@ module.exports = {
     /**
      * Called when the background mode has been activated.
      */
-    onactivate : function () {},
+    onactivate : function () {
+     	// Mark client as running in background
+    	FollowMe.setBackgroundActive();
+
+        if (UserClient.is_anonym == true) {
+        	Meteor._localStorage.setItem("FOLLOWME_ANONYM_USER_ID",UserClient.user_id);
+        }
+        // stop startUserStatusTransmission (this function has not callback on client <- no push from server!!!)
+        FollowMe.startUserStatusTransmissionInBackGround();
+        FollowMe.log({
+            message: "BACKGROUND ACTIVATED ",
+            mode: "a",
+            explicit: true,
+            level: 5
+        });
+    },
 
     /**
      * Called when the background mode has been deaktivated.
      */
-    ondeactivate : function () {},
+    ondeactivate : function () {
+    	// Mark client as stop running in background
+    	FollowMe.setBackgroundInactive();
+    	
+        FollowMe.startUserStatusTransmission();
+        FollowMe.log({
+            message: "LEAVE BACKGROUND ",
+            mode: "a",
+            explicit: true,
+            level: 5
+        });
+    },
 
     configure: function(success, failure, config) {
         this.config = config;
