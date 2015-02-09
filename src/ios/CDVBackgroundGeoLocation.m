@@ -17,11 +17,18 @@
 #define acquiredLocationSound   1052
 #define locationErrorSound      1073
 
+
+
 @implementation CDVBackgroundGeoLocation {
     BOOL isDebugging;
     BOOL enabled;
     BOOL isUpdatingLocation;
     BOOL stopOnTerminate;
+	
+	NSString *const kAPPBackgroundJsNamespace = @"cordova.plugins.backgroundMode";
+	NSString *const kAPPBackgroundEventActivate = @"activate";
+	NSString *const kAPPBackgroundEventDeactivate = @"deactivate";
+	NSString *const kAPPBackgroundEventFailure = @"failure";
 
     NSString *token;
     NSString *url;
@@ -394,6 +401,7 @@
         }
         [self setPace: isMoving];
     }
+    [self fireEvent:kAPPBackgroundEventActivate withParams:NULL];
 }
 /**@
  * Resume.  Turn background off
@@ -404,6 +412,7 @@
     if (enabled) {
         [self stopUpdatingLocation];
     }
+    [self fireEvent:kAPPBackgroundEventDeactivate withParams:NULL];
 }
 
 
@@ -772,6 +781,24 @@
 - (void)dealloc
 {
     locationManager.delegate = nil;
+}
+
+/**
+ * Method to fire an event with some parameters in the browser.
+ */
+- (void) fireEvent:(NSString*)event withParams:(NSString*)params
+{
+    NSString* active = [event isEqualToString:kAPPBackgroundEventActivate] ? @"true" : @"false";
+
+    NSString* flag = [NSString stringWithFormat:@"%@._isActive=%@;",
+                    kAPPBackgroundJsNamespace, active];
+
+    NSString* fn = [NSString stringWithFormat:@"setTimeout('%@.on%@(%@)',0);",
+                    kAPPBackgroundJsNamespace, event, params];
+
+    NSString* js = [flag stringByAppendingString:fn];
+
+    [self.commandDelegate evalJs:js];
 }
 
 @end

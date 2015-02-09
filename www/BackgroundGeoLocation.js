@@ -8,6 +8,16 @@ module.exports = {
     * @property {Object} config
     */
     config: {},
+    
+    /**
+     * Called when the background mode has been activated.
+     */
+    onactivate = function () {},
+
+    /**
+     * Called when the background mode has been deaktivated.
+     */
+    ondeactivate = function () {},
 
     configure: function(success, failure, config) {
         this.config = config;
