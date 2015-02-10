@@ -28,6 +28,11 @@ module.exports = {
      * Called when the background mode has been deaktivated.
      */
     ondeactivate : function () {},
+    
+    /**
+     * Called for android if new location was found
+     */
+    callbackFn : function (location) {},
 
     configure: function(success, failure, config) {
         this.config = config;

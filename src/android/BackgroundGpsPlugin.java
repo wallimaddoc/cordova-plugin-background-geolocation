@@ -12,6 +12,15 @@ import android.location.LocationManager;
 import android.util.Log;
 
 public class BackgroundGpsPlugin extends CordovaPlugin {
+	
+	 // Event types for callbacks
+	private enum Event {
+		ACTIVATE, DEACTIVATE, FAILURE, RUNINBACKGROUND, RUNINFOREGROUND
+	}
+	
+	 // Plugin namespace
+	private static final String JS_NAMESPACE = "window.plugins.backgroundGeoLocation";
+	
     private static final String TAG = "BackgroundGpsPlugin";
 
     public static final String ACTION_START = "start";
@@ -60,12 +69,14 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
                 updateServiceIntent.putExtra("stopOnTerminate", stopOnTerminate);
 
                 activity.startService(updateServiceIntent);
+                fireEvent(Event.ACTIVATE, null);
                 isEnabled = true;
             }
         } else if (ACTION_STOP.equalsIgnoreCase(action)) {
             isEnabled = false;
             result = true;
             activity.stopService(updateServiceIntent);
+            fireEvent(Event.DEACTIVATE, null);
             callbackContext.success();
         } else if (ACTION_CONFIGURE.equalsIgnoreCase(action)) {
             result = true;
@@ -97,14 +108,76 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     }
 
     /**
+    * Called when the system is about to start resuming a previous activity.
+    *
+    * @param multitasking
+    * Flag indicating if multitasking is turned on for app
+    */
+    @Override
+    public void onPause(boolean multitasking) {
+    	super.onPause(multitasking);
+    	fireEvent(Event.RUNINBACKGROUND, null);
+    }
+    /**
+    * Called when the activity will start interacting with the user.
+    *
+    * @param multitasking
+    * Flag indicating if multitasking is turned on for app
+    */
+    @Override
+    public void onResume(boolean multitasking) {
+    	super.onResume(multitasking);
+    	fireEvent(Event.RUNINFOREGROUND, null);
+    }
+    
+    /**
      * Override method in CordovaPlugin.
      * Checks to see if it should turn off
      */
     public void onDestroy() {
         Activity activity = this.cordova.getActivity();
+    	fireEvent(Event.DEACTIVATE, null);
 
         if(isEnabled && stopOnTerminate.equalsIgnoreCase("true")) {
             activity.stopService(updateServiceIntent);
         }
+    }
+    
+    /**
+    * Fire vent with some parameters inside the web view.
+    *
+    * @param event
+    * The name of the event
+    * @param params
+    * Optional arguments for the event
+    */
+    private void fireEvent (Event event, String params) {
+    	String eventName;
+    	if (updateSettings != null && event != Event.FAILURE)
+    		return;
+    	switch (event) {
+    	case ACTIVATE:
+    		eventName = "activate"; break;
+    	case DEACTIVATE:
+    		eventName = "deactivate"; break;
+    	case RUNINFOREGROUND:
+    		eventName = "runinforeground"; break;
+    	case RUNINBACKGROUND:
+    		eventName = "rundinbackground"; break;
+    	default:
+    		eventName = "failure";
+    	}
+    	String active = event == Event.ACTIVATE ? "true" : "false";
+    	String flag = String.format("%s._isActive=%s;",
+    			JS_NAMESPACE, active);
+    	String fn = String.format("setTimeout('%s.on%s(%s)',0);",
+    			JS_NAMESPACE, eventName, params);
+    	final String js = flag + fn;
+    	cordova.getActivity().runOnUiThread(new Runnable() {
+    		@Override
+    		public void run() {
+    			webView.loadUrl("javascript:" + js);
+    		}
+    	});
     }
 }

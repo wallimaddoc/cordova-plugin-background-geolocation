@@ -55,6 +55,11 @@ import android.widget.Toast;
 import static java.lang.Math.*;
 
 public class LocationUpdateService extends Service implements LocationListener {
+	
+	 // Plugin namespace
+	private static final String JS_NAMESPACE = "window.plugins.backgroundGeoLocation";
+
+	
     private static final String TAG = "LocationUpdateService";
     private static final String STATIONARY_REGION_ACTION        = "com.tenforwardconsulting.cordova.bgloc.STATIONARY_REGION_ACTION";
     private static final String STATIONARY_ALARM_ACTION         = "com.tenforwardconsulting.cordova.bgloc.STATIONARY_ALARM_ACTION";
@@ -657,10 +662,11 @@ public class LocationUpdateService extends Service implements LocationListener {
             return false;
         }
         try {
+        	
             lastUpdateTime = SystemClock.elapsedRealtime();
             Log.i(TAG, "Posting  native location update: " + l);
-            DefaultHttpClient httpClient = new DefaultHttpClient();
-            HttpPost request = new HttpPost(url);
+//            DefaultHttpClient httpClient = new DefaultHttpClient();
+//            HttpPost request = new HttpPost(url);
 
             JSONObject location = new JSONObject();
             location.put("latitude", l.getLatitude());
@@ -674,8 +680,19 @@ public class LocationUpdateService extends Service implements LocationListener {
 
             Log.i(TAG, "location: " + location.toString());
 
-            StringEntity se = new StringEntity(params.toString());
-            request.setEntity(se);
+            //StringEntity se = new StringEntity(params.toString());
+            
+        	String fn = String.format("setTimeout('%s.callbackFn(%s)',0);",
+        			JS_NAMESPACE, params.toString());
+        	final String js = fn;
+        	this.runOnUiThread(new Runnable() {
+        		@Override
+        		public void run() {
+        			webView.loadUrl("javascript:" + js);
+        		}
+        	});
+
+            /*request.setEntity(se);
             request.setHeader("Accept", "application/json");
             request.setHeader("Content-type", "application/json");
 
@@ -694,7 +711,8 @@ public class LocationUpdateService extends Service implements LocationListener {
                 return true;
             } else {
                 return false;
-            }
+            }*/
+        	return true;
         } catch (Throwable e) {
             Log.w(TAG, "Exception posting location: " + e);
             e.printStackTrace();
