@@ -17,13 +17,13 @@
 #define acquiredLocationSound   1052
 #define locationErrorSound      1073
 
-NSString *const kAPPBackgroundJsNamespace = @"window.plugins.backgroundGeoLocation";
-NSString *const kAPPBackgroundEventActivate = @"activate";
-NSString *const kAPPBackgroundEventDeactivate = @"deactivate";
-NSString *const kAPPBackgroundEventRunInBackground = @"runinbackground";
-NSString *const kAPPBackgroundEventRunInForeground = @"runinforeground";
+NSString *const wALLBackgroundJsNamespace = @"window.plugins.backgroundGeoLocation";
+NSString *const wALLBackgroundEventActivate = @"activate";
+NSString *const wALLBackgroundEventDeactivate = @"deactivate";
+NSString *const wALLBackgroundEventRunInBackground = @"runinbackground";
+NSString *const wALLBackgroundEventRunInForeground = @"runinforeground";
 
-NSString *const kAPPBackgroundEventFailure = @"failure";
+NSString *const wALLBackgroundEventFailure = @"failure";
 
 
 @implementation CDVBackgroundGeoLocation {
@@ -388,9 +388,9 @@ NSString *const kAPPBackgroundEventFailure = @"failure";
 {
     NSLog(@"- CDVBackgroundGeoLocation suspend (enabled? %d)", enabled);
     suspendedAt = [NSDate date];
- 	[self fireEvent:kAPPBackgroundEventRunInBackground withParams:NULL];
+ 	[self fireEvent:wALLBackgroundEventRunInBackground withParams:NULL];
     if (enabled) {
-    	 [self fireEvent:kAPPBackgroundEventActivate withParams:NULL];
+    	 [self fireEvent:wALLBackgroundEventActivate withParams:NULL];
         // Sample incoming stationary-location candidate:  Is it within the current stationary-region?  If not, I guess we're moving.
         if (!isMoving && stationaryRegion) {
             if ([self locationAge:stationaryLocation] < (5 * 60.0)) {
@@ -411,8 +411,8 @@ NSString *const kAPPBackgroundEventFailure = @"failure";
 -(void) onResume:(NSNotification *) notification
 {
     NSLog(@"- CDVBackgroundGeoLocation resume");
-    [self fireEvent:kAPPBackgroundEventRunInForeground withParams:NULL];
-    [self fireEvent:kAPPBackgroundEventDeactivate withParams:NULL];
+    [self fireEvent:wALLBackgroundEventRunInForeground withParams:NULL];
+    [self fireEvent:wALLBackgroundEventDeactivate withParams:NULL];
     if (enabled) {
         [self stopUpdatingLocation];
     }
@@ -791,13 +791,13 @@ NSString *const kAPPBackgroundEventFailure = @"failure";
  */
 - (void) fireEvent:(NSString*)event withParams:(NSString*)params
 {
-    NSString* active = [event isEqualToString:kAPPBackgroundEventActivate] ? @"true" : @"false";
+    NSString* active = [event isEqualToString:wALLBackgroundEventActivate] ? @"true" : @"false";
 
     NSString* flag = [NSString stringWithFormat:@"%@._isActive=%@;",
-                    kAPPBackgroundJsNamespace, active];
+                    wALLBackgroundJsNamespace, active];
 
     NSString* fn = [NSString stringWithFormat:@"setTimeout('%@.on%@(%@)',0);",
-                    kAPPBackgroundJsNamespace, event, params];
+                    wALLBackgroundJsNamespace, event, params];
 
     NSString* js = [flag stringByAppendingString:fn];
 

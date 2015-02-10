@@ -12,7 +12,7 @@ module.exports = {
     /**
      * Called when the background is entered
      */
-    onrruninbackground : function () {},
+    onruninbackground : function () {},
 
     /**
      * Called when the foreground is entered
