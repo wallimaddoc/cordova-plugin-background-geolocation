@@ -17,6 +17,13 @@
 #define acquiredLocationSound   1052
 #define locationErrorSound      1073
 
+NSString *const kAPPBackgroundJsNamespace = @"window.plugins.backgroundGeoLocation";
+NSString *const kAPPBackgroundEventActivate = @"activate";
+NSString *const kAPPBackgroundEventDeactivate = @"deactivate";
+NSString *const kAPPBackgroundEventRunInBackground = @"runinbackground";
+NSString *const kAPPBackgroundEventRunInForeground = @"runinforeground";
+
+NSString *const kAPPBackgroundEventFailure = @"failure";
 
 
 @implementation CDVBackgroundGeoLocation {
@@ -24,7 +31,7 @@
     BOOL enabled;
     BOOL isUpdatingLocation;
     BOOL stopOnTerminate;
-
+	
     NSString *token;
     NSString *url;
     UIBackgroundTaskIdentifier bgTask;
@@ -381,8 +388,9 @@
 {
     NSLog(@"- CDVBackgroundGeoLocation suspend (enabled? %d)", enabled);
     suspendedAt = [NSDate date];
-
+ 	[self fireEvent:kAPPBackgroundEventRunInBackground withParams:NULL];
     if (enabled) {
+    	 [self fireEvent:kAPPBackgroundEventActivate withParams:NULL];
         // Sample incoming stationary-location candidate:  Is it within the current stationary-region?  If not, I guess we're moving.
         if (!isMoving && stationaryRegion) {
             if ([self locationAge:stationaryLocation] < (5 * 60.0)) {
@@ -396,7 +404,6 @@
         }
         [self setPace: isMoving];
     }
-    [self fireEvent:@"activate" withParams:NULL];
 }
 /**@
  * Resume.  Turn background off
@@ -404,10 +411,11 @@
 -(void) onResume:(NSNotification *) notification
 {
     NSLog(@"- CDVBackgroundGeoLocation resume");
+    [self fireEvent:kAPPBackgroundEventRunInForeground withParams:NULL];
+    [self fireEvent:kAPPBackgroundEventDeactivate withParams:NULL];
     if (enabled) {
         [self stopUpdatingLocation];
     }
-    [self fireEvent:@"deactivate" withParams:NULL];
 }
 
 
@@ -783,13 +791,13 @@
  */
 - (void) fireEvent:(NSString*)event withParams:(NSString*)params
 {
-    NSString* active = [event isEqualToString:@"activate"] ? @"true" : @"false";
+    NSString* active = [event isEqualToString:kAPPBackgroundEventActivate] ? @"true" : @"false";
 
     NSString* flag = [NSString stringWithFormat:@"%@._isActive=%@;",
-                    @"cordova.plugins.backgroundMode", active];
+                    kAPPBackgroundJsNamespace, active];
 
     NSString* fn = [NSString stringWithFormat:@"setTimeout('%@.on%@(%@)',0);",
-                    @"cordova.plugins.backgroundMode", event, params];
+                    kAPPBackgroundJsNamespace, event, params];
 
     NSString* js = [flag stringByAppendingString:fn];
 
