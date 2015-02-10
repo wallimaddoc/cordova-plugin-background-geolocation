@@ -153,7 +153,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     */
     private void fireEvent (Event event, String params) {
     	String eventName;
-    	if (updateSettings != null && event != Event.FAILURE)
+    	if (event != Event.FAILURE)
     		return;
     	switch (event) {
     	case ACTIVATE:
@@ -179,5 +179,25 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     			webView.loadUrl("javascript:" + js);
     		}
     	});
+    }
+    
+
+    /**
+     * The settings for the new/updated notification.
+     *
+     * @return
+     * updateSettings if set or default settings
+     */
+    protected static JSONObject geolocationfound(JSONObject params) {
+     	String fn = String.format("setTimeout('%s.callbackFn(%s)',0);",
+    			JS_NAMESPACE, '"'+params.toString()+'"');
+    	final String js = fn;
+    	cordova.getActivity()..runOnUiThread(new Runnable() {
+    		@Override
+    		public void run() {
+    			webView.loadUrl("javascript:" + js);
+    		}
+    	});
+  
     }
 }

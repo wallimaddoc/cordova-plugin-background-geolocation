@@ -682,7 +682,9 @@ public class LocationUpdateService extends Service implements LocationListener {
 
             //StringEntity se = new StringEntity(params.toString());
             
-        	String fn = String.format("setTimeout('%s.callbackFn(%s)',0);",
+            BackgroundGpsPlugin.geolocationfound(location);
+            
+        /*	String fn = String.format("setTimeout('%s.callbackFn(%s)',0);",
         			JS_NAMESPACE, params.toString());
         	final String js = fn;
         	this.runOnUiThread(new Runnable() {
