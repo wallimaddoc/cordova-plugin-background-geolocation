@@ -24,14 +24,11 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	private static final String JS_NAMESPACE = "window.plugins.backgroundGeoLocation";
 	
     private static final String TAG = "BackgroundGpsPlugin";
-    public static WebView webview = webView;
     
     public static final String ACTION_START = "start";
     public static final String ACTION_STOP = "stop";
     public static final String ACTION_CONFIGURE = "configure";
     public static final String ACTION_SET_CONFIG = "setConfig";
-
-    public Parcel parcel;
     
     
     private Intent updateServiceIntent;
@@ -204,7 +201,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     	cordova.getActivity().runOnUiThread(new Runnable() {
     		@Override
     		public void run() {
-    			BackgroundGpsPlugin.webview.loadUrl("javascript:" + js);
+    			webView.loadUrl("javascript:" + js);
     		}
     	});
   
