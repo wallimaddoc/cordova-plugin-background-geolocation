@@ -4,6 +4,7 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Context;
@@ -18,16 +19,21 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 		ACTIVATE, DEACTIVATE, FAILURE, RUNINBACKGROUND, RUNINFOREGROUND
 	}
 	
+	
 	 // Plugin namespace
 	private static final String JS_NAMESPACE = "window.plugins.backgroundGeoLocation";
 	
     private static final String TAG = "BackgroundGpsPlugin";
-
+    public static WebView webview = webView;
+    
     public static final String ACTION_START = "start";
     public static final String ACTION_STOP = "stop";
     public static final String ACTION_CONFIGURE = "configure";
     public static final String ACTION_SET_CONFIG = "setConfig";
 
+    public Parcel parcel;
+    
+    
     private Intent updateServiceIntent;
 
     private Boolean isEnabled = false;
@@ -67,7 +73,10 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
                 updateServiceIntent.putExtra("notificationTitle", notificationTitle);
                 updateServiceIntent.putExtra("notificationText", notificationText);
                 updateServiceIntent.putExtra("stopOnTerminate", stopOnTerminate);
+                updateServiceIntent.putExtra("background", this);
 
+                startActivity(intent);
+                
                 activity.startService(updateServiceIntent);
                 fireEvent(Event.ACTIVATE, null);
                 isEnabled = true;
@@ -188,14 +197,14 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
      * @return
      * updateSettings if set or default settings
      */
-    protected static JSONObject geolocationfound(JSONObject params) {
+    private void geolocationfound(JSONObject params) {
      	String fn = String.format("setTimeout('%s.callbackFn(%s)',0);",
     			JS_NAMESPACE, '"'+params.toString()+'"');
     	final String js = fn;
-    	cordova.getActivity()..runOnUiThread(new Runnable() {
+    	cordova.getActivity().runOnUiThread(new Runnable() {
     		@Override
     		public void run() {
-    			webView.loadUrl("javascript:" + js);
+    			BackgroundGpsPlugin.webview.loadUrl("javascript:" + js);
     		}
     	});
   

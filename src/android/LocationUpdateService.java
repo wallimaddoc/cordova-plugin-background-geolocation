@@ -56,9 +56,6 @@ import static java.lang.Math.*;
 
 public class LocationUpdateService extends Service implements LocationListener {
 	
-	 // Plugin namespace
-	private static final String JS_NAMESPACE = "window.plugins.backgroundGeoLocation";
-
 	
     private static final String TAG = "LocationUpdateService";
     private static final String STATIONARY_REGION_ACTION        = "com.tenforwardconsulting.cordova.bgloc.STATIONARY_REGION_ACTION";
@@ -86,7 +83,8 @@ public class LocationUpdateService extends Service implements LocationListener {
     private long stationaryLocationPollingInterval;
     private PendingIntent stationaryRegionPI;
     private PendingIntent singleUpdatePI;
-
+    private BackgroundGpsPlugin backround; 
+    
     private Boolean isMoving = false;
     private Boolean isAcquiringStationaryLocation = false;
     private Boolean isAcquiringSpeed = false;
@@ -185,7 +183,8 @@ public class LocationUpdateService extends Service implements LocationListener {
             isDebugging = Boolean.parseBoolean(intent.getStringExtra("isDebugging"));
             notificationTitle = intent.getStringExtra("notificationTitle");
             notificationText = intent.getStringExtra("notificationText");
-
+            backround = (BackgroundGpsPlugin) intent.getExtras().getSerializable("background");
+            
             // Build a Notification required for running service in foreground.
             Intent main = new Intent(this, BackgroundGpsPlugin.class);
             main.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -682,7 +681,7 @@ public class LocationUpdateService extends Service implements LocationListener {
 
             //StringEntity se = new StringEntity(params.toString());
             
-            BackgroundGpsPlugin.geolocationfound(location);
+            backround.geolocationfound(location);
             
         /*	String fn = String.format("setTimeout('%s.callbackFn(%s)',0);",
         			JS_NAMESPACE, params.toString());
