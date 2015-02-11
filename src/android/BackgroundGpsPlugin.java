@@ -42,7 +42,8 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	                mCallbackText.setText("Received from service: " + msg.arg1);
 	                break;
 	            case LocationUpdateService.MSG_UPDATE_LOCATION:
-	            	geolocationfound(msg.arg1);
+	            	String msg_text = msg.obj.toString();
+	            	geolocationfound(msg_text);
 	                break;
 	            default:
 	                super.handleMessage(msg);
