@@ -24,12 +24,10 @@ import android.os.RemoteException;
 public class BackgroundGpsPlugin extends CordovaPlugin {
 	
 	
-	boolean mIsBound = false;
-	
 	/** Messenger for communicating with service. */
 	Messenger mService = null;
 	/** Flag indicating whether we have called bind on the service. */
-	boolean mIsBound;
+	boolean mIsBound = false;
 	/** Some text view we are using to show state information. */
 	TextView mCallbackText;
 
@@ -167,8 +165,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 
                 //activity.startService(updateServiceIntent);
                 
-                activity.bindService(updateServiceIntent, 
-                		LocationUpdateService.class), mConnection, Context.BIND_AUTO_CREATE);
+                activity.bindService(updateServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
                 mIsBound = true;
                 
                 fireEvent(Event.ACTIVATE, null);
