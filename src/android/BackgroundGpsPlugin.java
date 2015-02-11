@@ -71,8 +71,6 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
                 updateServiceIntent.putExtra("notificationText", notificationText);
                 updateServiceIntent.putExtra("stopOnTerminate", stopOnTerminate);
 
-                startActivity(intent);
-                
                 activity.startService(updateServiceIntent);
                 fireEvent(Event.ACTIVATE, null);
                 isEnabled = true;
