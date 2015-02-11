@@ -16,8 +16,10 @@ import android.os.Handler;
 import android.os.Messenger;
 import android.os.Message;
 import android.widget.TextView;
-import android.widget.Toast;
-
+import android.content.ServiceConnection;
+import android.content.ComponentName;
+import android.os.IBinder;
+import android.os.RemoteException;
 
 public class BackgroundGpsPlugin extends CordovaPlugin {
 	
@@ -36,7 +38,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	    @Override
 	    public void handleMessage(Message msg) {
 	        switch (msg.what) {
-	            case MessengerService.MSG_SET_VALUE:
+	            case LocationUpdateService.MSG_SET_VALUE:
 	                mCallbackText.setText("Received from service: " + msg.arg1);
 	                break;
 	            default:
@@ -68,13 +70,13 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	        // connected to it.
 	        try {
 	            Message msg = Message.obtain(null,
-	                    MessengerService.MSG_REGISTER_CLIENT);
+	                    LocationUpdateService.MSG_REGISTER_CLIENT);
 	            msg.replyTo = mMessenger;
 	            mService.send(msg);
 
 	            // Give it some value as an example.
 	            msg = Message.obtain(null,
-	                    MessengerService.MSG_SET_VALUE, this.hashCode(), 0);
+	                    LocationUpdateService.MSG_SET_VALUE, this.hashCode(), 0);
 	            mService.send(msg);
 	        } catch (RemoteException e) {
 	            // In this case the service has crashed before we could even
@@ -83,9 +85,6 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	            // so there is no need to do anything here.
 	        }
 
-	        // As part of the sample, tell the user what happened.
-	        Toast.makeText(Binding.this,"Connect"",
-	                Toast.LENGTH_SHORT).show();
 	    }
 
 	    public void onServiceDisconnected(ComponentName className) {
@@ -94,9 +93,6 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	        mService = null;
 	        mCallbackText.setText("Disconnected.");
 
-	        // As part of the sample, tell the user what happened.
-	        Toast.makeText(Binding.this, "Disconnect",
-	                Toast.LENGTH_SHORT).show();
 	    }
 	};
 	
