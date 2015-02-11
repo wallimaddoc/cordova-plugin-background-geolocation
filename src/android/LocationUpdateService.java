@@ -136,30 +136,6 @@ public class LocationUpdateService extends Service implements LocationListener {
     public IBinder onBind(Intent intent) {
         return mMessenger.getBinder();
     }
-
-    /**
-     * Show a notification while this service is running.
-     */
-    private void showNotification() {
-        // In this sample, we'll use the same text for the ticker and the expanded notification
-        CharSequence text = getText("Service started");
-
-        // Set the icon, scrolling text and timestamp
-        Notification notification = new Notification(R.drawable.stat_sample, text,
-                System.currentTimeMillis());
-
-        // The PendingIntent to launch our activity if the user selects this notification
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, Controller.class), 0);
-
-        // Set the info for the views that show in the notification panel.
-        notification.setLatestEventInfo(this, getText("My service"),
-                       text, contentIntent);
-
-        // Send the notification.
-        // We use a string id because it is a unique number.  We use it later to cancel.
-        mNM.notify("Remote service startet", notification);
-    }
 	
 	/**
 	 * end messaging
@@ -221,9 +197,6 @@ public class LocationUpdateService extends Service implements LocationListener {
         super.onCreate();
         
         mNM = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-
-        // Display a notification about us starting.
-        showNotification();
 
         Log.i(TAG, "OnCreate");
 
