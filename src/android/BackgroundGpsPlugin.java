@@ -35,20 +35,25 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	 * Handler of incoming messages from service.
 	 */
 	class IncomingHandler extends Handler {
-	    @Override
-	    public void handleMessage(Message msg) {
-	        switch (msg.what) {
-	            case LocationUpdateService.MSG_SET_VALUE:
-	                mCallbackText.setText("Received from service: " + msg.arg1);
-	                break;
-	            case LocationUpdateService.MSG_UPDATE_LOCATION:
-	            	String msg_text = msg.obj.toString();
-	            	geolocationfound(msg_text);
-	                break;
-	            default:
-	                super.handleMessage(msg);
-	        }
-	    }
+		@Override
+		public void handleMessage(Message msg) {
+			try {
+				String msg_text;
+				switch (msg.what) {
+				case LocationUpdateService.MSG_SET_VALUE:
+					//  mCallbackText.setText("Received from service: " + msg.arg1);
+					break;
+				case LocationUpdateService.MSG_UPDATE_LOCATION:
+					msg_text = msg.obj.toString();
+					geolocationfound(msg_text);
+					break;
+				default:
+					super.handleMessage(msg);
+				}
+			} catch (Exception e) {
+				fireEvent(Event.RUNINFOREGROUND, "error in send");
+			}
+		}
 	}
 
 	/**
@@ -69,7 +74,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	    		// service through an IDL interface, so get a client-side
 	    		// representation of that from the raw service object.
 	    		mService = new Messenger(service);
-	    		mCallbackText.setText("Attached.");
+	    	//	mCallbackText.setText("Attached.");
 
 	    		// We want to monitor the service for as long as we are
 	    		// connected to it.
@@ -87,7 +92,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	            // do anything with it; we can count on soon being
 	            // disconnected (and then reconnected if it can be restarted)
 	            // so there is no need to do anything here.
-	        } catch (Exeption e) {
+	        } catch (Exception e) {
 	        	String err = e.getMessage()+" "+e.getStackTrace();
 	        	fireEvent(Event.RUNINFOREGROUND, err);
 	        	// do nothing
@@ -99,7 +104,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	        // This is called when the connection with the service has been
 	        // unexpectedly disconnected -- that is, its process crashed.
 	        mService = null;
-	        mCallbackText.setText("Disconnected.");
+	      //  mCallbackText.setText("Disconnected.");
 
 	    }
 	};
