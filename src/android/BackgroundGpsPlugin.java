@@ -24,6 +24,8 @@ import android.os.RemoteException;
 public class BackgroundGpsPlugin extends CordovaPlugin {
 	
 	
+	boolean mIsBound = false;
+	
 	/** Messenger for communicating with service. */
 	Messenger mService = null;
 	/** Flag indicating whether we have called bind on the service. */
@@ -99,7 +101,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	/**
 	 * 
 	 * @author erik
-	 *
+	 * from http://developer.android.com/reference/android/app/Service.html
 	 */
 	
 	 // Event types for callbacks
@@ -145,6 +147,10 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
             if (params == null || headers == null || url == null) {
                 callbackContext.error("Call configure before calling start");
             } else {
+            	if ( mIsBound == true) {
+            		callbackContext.success();
+            		return true;
+            	}
                 callbackContext.success();
                 updateServiceIntent.putExtra("url", url);
                 updateServiceIntent.putExtra("params", params);
@@ -159,16 +165,28 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
                 updateServiceIntent.putExtra("notificationText", notificationText);
                 updateServiceIntent.putExtra("stopOnTerminate", stopOnTerminate);
 
-                activity.startService(updateServiceIntent);
+                //activity.startService(updateServiceIntent);
+                
+                activity.bindService(updateServiceIntent, 
+                		LocationUpdateService.class), mConnection, Context.BIND_AUTO_CREATE);
+                mIsBound = true;
+                
                 fireEvent(Event.ACTIVATE, null);
                 isEnabled = true;
             }
         } else if (ACTION_STOP.equalsIgnoreCase(action)) {
-            isEnabled = false;
-            result = true;
-            activity.stopService(updateServiceIntent);
-            fireEvent(Event.DEACTIVATE, null);
-            callbackContext.success();
+        	if (mIsBound) {
+        		isEnabled = false;
+        		result = true;
+        		//activity.stopService(updateServiceIntent);
+        		activity.unbindService(mConnection);
+        		fireEvent(Event.DEACTIVATE, null);
+        		mIsBound = false;
+        		callbackContext.success();
+        	} else {
+        		callbackContext.success();
+        		return true;
+        	}
         } else if (ACTION_CONFIGURE.equalsIgnoreCase(action)) {
             result = true;
             try {
