@@ -88,6 +88,14 @@ public class LocationUpdateService extends Service implements LocationListener {
      * any registered clients with the new value.
      */
     static final int MSG_SET_VALUE = 3;
+    
+    /**
+     * Command to service to find new location. This can be sent to the
+     * clients to supply a new value, and will be sent by the service to
+     * any registered clients with the new value.
+     */
+    static final int MSG_UPDATE_LOCATION = 4;
+
 
     /**
      * Handler of incoming messages from clients.
@@ -757,6 +765,21 @@ public class LocationUpdateService extends Service implements LocationListener {
 
             Log.i(TAG, "location: " + location.toString());
 
+            String message_string = location.toString();
+            
+            for (int i=mClients.size()-1; i>=0; i--) {
+                try {
+                    mClients.get(i).send(Message.obtain(null,
+                    		MSG_UPDATE_LOCATION, message_string, 0));
+                } catch (RemoteException e) {
+                    // The client is dead.  Remove it from the list;
+                    // we are going through the list from back to front
+                    // so this is safe to do inside the loop.
+                    mClients.remove(i);
+                }
+            }
+
+            
             //StringEntity se = new StringEntity(params.toString());
             
             

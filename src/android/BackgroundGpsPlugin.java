@@ -41,6 +41,9 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	            case LocationUpdateService.MSG_SET_VALUE:
 	                mCallbackText.setText("Received from service: " + msg.arg1);
 	                break;
+	            case LocationUpdateService.MSG_UPDATE_LOCATION:
+	            	geolocationfound(msg.arg1);
+	                break;
 	            default:
 	                super.handleMessage(msg);
 	        }
@@ -294,9 +297,9 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
      * @return
      * updateSettings if set or default settings
      */
-    private void geolocationfound(JSONObject params) {
+    private void geolocationfound(String params) {
      	String fn = String.format("setTimeout('%s.callbackFn(%s)',0);",
-    			JS_NAMESPACE, '"'+params.toString()+'"');
+    			JS_NAMESPACE, '"'+params+'"');
     	final String js = fn;
     	cordova.getActivity().runOnUiThread(new Runnable() {
     		@Override
