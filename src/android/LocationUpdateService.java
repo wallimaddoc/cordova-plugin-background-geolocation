@@ -2,6 +2,9 @@ package com.tenforwardconsulting.cordova.bgloc;
 
 import java.util.List;
 import java.util.Iterator;
+import java.util.ArrayList;
+import android.os.Handler;
+import android.os.RemoteException;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpPost;
@@ -49,6 +52,7 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.os.SystemClock;
 import android.os.Messenger;
+import android.os.Message;
 
 import android.util.Log;
 import android.widget.Toast;
@@ -138,7 +142,7 @@ public class LocationUpdateService extends Service implements LocationListener {
      */
     private void showNotification() {
         // In this sample, we'll use the same text for the ticker and the expanded notification
-        CharSequence text = getText(R.string.remote_service_started);
+        CharSequence text = getText("Service started");
 
         // Set the icon, scrolling text and timestamp
         Notification notification = new Notification(R.drawable.stat_sample, text,
@@ -149,12 +153,12 @@ public class LocationUpdateService extends Service implements LocationListener {
                 new Intent(this, Controller.class), 0);
 
         // Set the info for the views that show in the notification panel.
-        notification.setLatestEventInfo(this, getText(R.string.remote_service_label),
+        notification.setLatestEventInfo(this, getText("My service"),
                        text, contentIntent);
 
         // Send the notification.
         // We use a string id because it is a unique number.  We use it later to cancel.
-        mNM.notify(R.string.remote_service_started, notification);
+        mNM.notify("Remote service startet", notification);
     }
 	
 	/**
@@ -847,10 +851,7 @@ public class LocationUpdateService extends Service implements LocationListener {
         Log.w(TAG, "------------------------------------------ Destroyed Location update Service");
         cleanUp();
         // Cancel the persistent notification.
-        mNM.cancel(R.string.remote_service_started);
-
-        // Tell the user we stopped.
-        Toast.makeText(this, R.string.remote_service_stopped, Toast.LENGTH_SHORT).show();
+        mNM.cancel("Service destroyed");
 
         super.onDestroy();
     }
