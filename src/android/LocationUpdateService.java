@@ -823,8 +823,6 @@ public class LocationUpdateService extends Service implements LocationListener {
     public void onDestroy() {
         Log.w(TAG, "------------------------------------------ Destroyed Location update Service");
         cleanUp();
-        // Cancel the persistent notification.
-        mNM.cancel("Service destroyed");
 
         super.onDestroy();
     }
