@@ -83,7 +83,6 @@ public class LocationUpdateService extends Service implements LocationListener {
     private long stationaryLocationPollingInterval;
     private PendingIntent stationaryRegionPI;
     private PendingIntent singleUpdatePI;
-    private BackgroundGpsPlugin backround; 
     
     private Boolean isMoving = false;
     private Boolean isAcquiringStationaryLocation = false;
@@ -183,7 +182,6 @@ public class LocationUpdateService extends Service implements LocationListener {
             isDebugging = Boolean.parseBoolean(intent.getStringExtra("isDebugging"));
             notificationTitle = intent.getStringExtra("notificationTitle");
             notificationText = intent.getStringExtra("notificationText");
-            backround = (BackgroundGpsPlugin) intent.getExtras().getSerializable("background");
             
             // Build a Notification required for running service in foreground.
             Intent main = new Intent(this, BackgroundGpsPlugin.class);
@@ -681,7 +679,6 @@ public class LocationUpdateService extends Service implements LocationListener {
 
             //StringEntity se = new StringEntity(params.toString());
             
-            backround.geolocationfound(location);
             
         /*	String fn = String.format("setTimeout('%s.callbackFn(%s)',0);",
         			JS_NAMESPACE, params.toString());
