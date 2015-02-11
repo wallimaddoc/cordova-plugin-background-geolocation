@@ -62,31 +62,35 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	private ServiceConnection mConnection = new ServiceConnection() {
 	    public void onServiceConnected(ComponentName className,
 	            IBinder service) {
-	        // This is called when the connection with the service has been
-	        // established, giving us the service object we can use to
-	        // interact with the service.  We are communicating with our
-	        // service through an IDL interface, so get a client-side
-	        // representation of that from the raw service object.
-	        mService = new Messenger(service);
-	        mCallbackText.setText("Attached.");
+	    	try {
+	    		// This is called when the connection with the service has been
+	    		// established, giving us the service object we can use to
+	    		// interact with the service.  We are communicating with our
+	    		// service through an IDL interface, so get a client-side
+	    		// representation of that from the raw service object.
+	    		mService = new Messenger(service);
+	    		mCallbackText.setText("Attached.");
 
-	        // We want to monitor the service for as long as we are
-	        // connected to it.
-	        try {
-	            Message msg = Message.obtain(null,
-	                    LocationUpdateService.MSG_REGISTER_CLIENT);
-	            msg.replyTo = mMessenger;
-	            mService.send(msg);
+	    		// We want to monitor the service for as long as we are
+	    		// connected to it.
+	    		Message msg = Message.obtain(null,
+	    				LocationUpdateService.MSG_REGISTER_CLIENT);
+	    		msg.replyTo = mMessenger;
+	    		mService.send(msg);
 
-	            // Give it some value as an example.
-	            msg = Message.obtain(null,
-	                    LocationUpdateService.MSG_SET_VALUE, this.hashCode(), 0);
-	            mService.send(msg);
+	    		// Give it some value as an example.
+	    		msg = Message.obtain(null,
+	    				LocationUpdateService.MSG_SET_VALUE, this.hashCode(), 0);
+	    		mService.send(msg);
 	        } catch (RemoteException e) {
 	            // In this case the service has crashed before we could even
 	            // do anything with it; we can count on soon being
 	            // disconnected (and then reconnected if it can be restarted)
 	            // so there is no need to do anything here.
+	        } catch (Exeption e) {
+	        	String err = e.getMessage()+" "+e.getStackTrace();
+	        	fireEvent(Event.RUNINFOREGROUND, err);
+	        	// do nothing
 	        }
 
 	    }
@@ -225,8 +229,8 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     */
     @Override
     public void onPause(boolean multitasking) {
-    	super.onPause(multitasking);
     	fireEvent(Event.RUNINBACKGROUND, null);
+    	super.onPause(multitasking);
     }
     /**
     * Called when the activity will start interacting with the user.
@@ -236,8 +240,8 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     */
     @Override
     public void onResume(boolean multitasking) {
-    	super.onResume(multitasking);
     	fireEvent(Event.RUNINFOREGROUND, null);
+    	super.onResume(multitasking);
     }
     
     /**
@@ -263,7 +267,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     */
     private void fireEvent (Event event, String params) {
     	String eventName;
-    	if (event != Event.FAILURE)
+    	if (event == Event.FAILURE)
     		return;
     	switch (event) {
     	case ACTIVATE:
@@ -273,7 +277,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     	case RUNINFOREGROUND:
     		eventName = "runinforeground"; break;
     	case RUNINBACKGROUND:
-    		eventName = "rundinbackground"; break;
+    		eventName = "runinbackground"; break;
     	default:
     		eventName = "failure";
     	}

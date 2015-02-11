@@ -769,8 +769,7 @@ public class LocationUpdateService extends Service implements LocationListener {
             
             for (int i=mClients.size()-1; i>=0; i--) {
                 try {
-                    mClients.get(i).send(Message.obtain(null,
-                    		MSG_UPDATE_LOCATION, 0, 0, message_string));
+                    mClients.get(i).send(Message.obtain(null,MSG_UPDATE_LOCATION, 0, 0, message_string));
                 } catch (RemoteException e) {
                     // The client is dead.  Remove it from the list;
                     // we are going through the list from back to front
