@@ -31,6 +31,13 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	/** Some text view we are using to show state information. */
 	TextView mCallbackText;
 
+    public static final String SendMessagesToLocationService = "SendMessagesToLocationService";
+    public static final String ErrorConnectToLocationService = "ErrorConnectToLocationService";
+    public static final String DisconnectFromLocationService = "DisconnectFromLocationService";
+    public static final String GetConnectionToLocationService = "GetConnectionToLocationService";
+    public static final String GetUpdateFromLocationService = "GetUpdateFromLocationService";
+    public static final String ErrorConnectToLocationService = "ErrorConnectToLocationService";
+
 	/**
 	 * Handler of incoming messages from service.
 	 */
@@ -41,11 +48,11 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 				String msg_text;
 				switch (msg.what) {
 				case LocationUpdateService.MSG_SET_VALUE:
-					fireEvent(Event.MESSAGE, "GetConnectionToLocationService"+msg.what);
+					fireEvent(Event.MESSAGE, GetConnectionToLocationService+msg.what);
 					//  mCallbackText.setText("Received from service: " + msg.arg1);
 					break;
 				case LocationUpdateService.MSG_UPDATE_LOCATION:
-					fireEvent(Event.MESSAGE, "GetUpdateFromLocationService"+msg.what);
+					fireEvent(Event.MESSAGE, GetUpdateFromLocationService+msg.what);
 					msg_text = msg.obj.toString();
 					geolocationfound(msg_text);
 					break;
@@ -53,7 +60,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 					super.handleMessage(msg);
 				}
 			} catch (Exception e) {
-				fireEvent(Event.MESSAGE, "ErrorConnectToLocationService"+msg.what);
+				fireEvent(Event.MESSAGE, ErrorConnectToLocationService+msg.what);
 			}
 		}
 	}
@@ -62,6 +69,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	 * Target we publish for clients to send messages to IncomingHandler.
 	 */
 	final Messenger mMessenger = new Messenger(new IncomingHandler());
+	
 
 	/**
 	 * Class for interacting with the main interface of the service.
@@ -87,7 +95,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	    		// Give it some value as an example.
 	    		msg = Message.obtain(null,LocationUpdateService.MSG_SET_VALUE, this.hashCode(), 0);
 	    		mService.send(msg);
-				fireEvent(Event.MESSAGE, "SendMessagesToLocationService");
+				fireEvent(Event.MESSAGE, SendMessagesToLocationService);
 
 	        } catch (RemoteException e) {
 	            // In this case the service has crashed before we could even
@@ -95,7 +103,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	            // disconnected (and then reconnected if it can be restarted)
 	            // so there is no need to do anything here.
 	        } catch (Exception e) {
-				fireEvent(Event.MESSAGE, "ErrorConnectToLocationService");
+				fireEvent(Event.MESSAGE, ErrorConnectToLocationService);
 	        	// do nothing
 	        }
 
@@ -106,7 +114,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	        // unexpectedly disconnected -- that is, its process crashed.
 	        mService = null;
 	        //  mCallbackText.setText("Disconnected.");
-			fireEvent(Event.MESSAGE, "DisconnectFromLocationService");
+			fireEvent(Event.MESSAGE, DisconnectFromLocationService);
 	    }
 	};
 	
