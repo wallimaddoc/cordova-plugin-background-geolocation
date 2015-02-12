@@ -250,16 +250,6 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     	super.onResume(multitasking);
     }
     
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-    	super.onStartCommand(intent, flags, startId);
-    	
-        //We want this service to continue running until it is explicitly stopped
-    	fireEvent(Event.MESSAGE, "StartBackGroundActivity");
-        return START_REDELIVER_INTENT;
-    }
-
-    
     /**
      * Override method in CordovaPlugin.
      * Checks to see if it should turn off
