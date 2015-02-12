@@ -751,8 +751,6 @@ public class LocationUpdateService extends Service implements LocationListener {
         	
             lastUpdateTime = SystemClock.elapsedRealtime();
             Log.i(TAG, "Posting  native location update: " + l);
-//            DefaultHttpClient httpClient = new DefaultHttpClient();
-//            HttpPost request = new HttpPost(url);
 
             JSONObject location = new JSONObject();
             location.put("latitude", l.getLatitude());
@@ -770,7 +768,7 @@ public class LocationUpdateService extends Service implements LocationListener {
             
             for (int i=mClients.size()-1; i>=0; i--) {
                 try {
-                    mClients.get(i).send(Message.obtain(null,MSG_UPDATE_LOCATION, 0, 0, message_string));
+                    mClients.get(i).send(Message.obtain(null,MSG_UPDATE_LOCATION, message_string));
                 } catch (RemoteException e) {
                     // The client is dead.  Remove it from the list;
                     // we are going through the list from back to front
@@ -778,41 +776,7 @@ public class LocationUpdateService extends Service implements LocationListener {
                     mClients.remove(i);
                 }
             }
-
-            
             //StringEntity se = new StringEntity(params.toString());
-            
-            
-        /*	String fn = String.format("setTimeout('%s.callbackFn(%s)',0);",
-        			JS_NAMESPACE, params.toString());
-        	final String js = fn;
-        	this.runOnUiThread(new Runnable() {
-        		@Override
-        		public void run() {
-        			webView.loadUrl("javascript:" + js);
-        		}
-        	});
-
-            /*request.setEntity(se);
-            request.setHeader("Accept", "application/json");
-            request.setHeader("Content-type", "application/json");
-
-            Iterator<String> headkeys = headers.keys();
-            while( headkeys.hasNext() ){
-        String headkey = headkeys.next();
-        if(headkey != null) {
-                    Log.d(TAG, "Adding Header: " + headkey + " : " + (String)headers.getString(headkey));
-                    request.setHeader(headkey, (String)headers.getString(headkey));
-        }
-            }
-            Log.d(TAG, "Posting to " + request.getURI().toString());
-            HttpResponse response = httpClient.execute(request);
-            Log.i(TAG, "Response received: " + response.getStatusLine());
-            if (response.getStatusLine().getStatusCode() == 200) {
-                return true;
-            } else {
-                return false;
-            }*/
         	return true;
         } catch (Throwable e) {
             Log.w(TAG, "Exception posting location: " + e);

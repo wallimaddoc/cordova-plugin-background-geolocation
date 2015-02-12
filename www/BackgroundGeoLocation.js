@@ -30,6 +30,12 @@ module.exports = {
     ondeactivate : function () {},
     
     /**
+     * Called when the background mode has been deaktivated.
+     */
+    onmessage : function () {},
+
+    
+    /**
      * Called for android if new location was found
      */
     callbackFn : function (location) {},

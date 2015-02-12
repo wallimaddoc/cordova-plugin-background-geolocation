@@ -41,9 +41,11 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 				String msg_text;
 				switch (msg.what) {
 				case LocationUpdateService.MSG_SET_VALUE:
+					fireEvent(Event.MESSAGE, "GetConnectionToLocationService"+msg.what);
 					//  mCallbackText.setText("Received from service: " + msg.arg1);
 					break;
 				case LocationUpdateService.MSG_UPDATE_LOCATION:
+					fireEvent(Event.MESSAGE, "GetUpdateFromLocationService"+msg.what);
 					msg_text = msg.obj.toString();
 					geolocationfound(msg_text);
 					break;
@@ -51,7 +53,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 					super.handleMessage(msg);
 				}
 			} catch (Exception e) {
-				fireEvent(Event.RUNINFOREGROUND, "error in send");
+				fireEvent(Event.MESSAGE, "ErrorConnectToLocationService"+msg.what);
 			}
 		}
 	}
@@ -74,27 +76,26 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	    		// service through an IDL interface, so get a client-side
 	    		// representation of that from the raw service object.
 	    		mService = new Messenger(service);
-	    	//	mCallbackText.setText("Attached.");
+	    		//	mCallbackText.setText("Attached.");
 
 	    		// We want to monitor the service for as long as we are
 	    		// connected to it.
-	    		Message msg = Message.obtain(null,
-	    				LocationUpdateService.MSG_REGISTER_CLIENT);
+	    		Message msg = Message.obtain(null,LocationUpdateService.MSG_REGISTER_CLIENT);
 	    		msg.replyTo = mMessenger;
 	    		mService.send(msg);
 
 	    		// Give it some value as an example.
-	    		msg = Message.obtain(null,
-	    				LocationUpdateService.MSG_SET_VALUE, this.hashCode(), 0);
+	    		msg = Message.obtain(null,LocationUpdateService.MSG_SET_VALUE, this.hashCode(), 0);
 	    		mService.send(msg);
+				fireEvent(Event.MESSAGE, "SendMessagesToLocationService");
+
 	        } catch (RemoteException e) {
 	            // In this case the service has crashed before we could even
 	            // do anything with it; we can count on soon being
 	            // disconnected (and then reconnected if it can be restarted)
 	            // so there is no need to do anything here.
 	        } catch (Exception e) {
-	        	String err = e.getMessage()+" "+e.getStackTrace();
-	        	fireEvent(Event.RUNINFOREGROUND, err);
+				fireEvent(Event.MESSAGE, "ErrorConnectToLocationService");
 	        	// do nothing
 	        }
 
@@ -104,8 +105,8 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	        // This is called when the connection with the service has been
 	        // unexpectedly disconnected -- that is, its process crashed.
 	        mService = null;
-	      //  mCallbackText.setText("Disconnected.");
-
+	        //  mCallbackText.setText("Disconnected.");
+			fireEvent(Event.MESSAGE, "DisconnectFromLocationService");
 	    }
 	};
 	
@@ -117,7 +118,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	
 	 // Event types for callbacks
 	private enum Event {
-		ACTIVATE, DEACTIVATE, FAILURE, RUNINBACKGROUND, RUNINFOREGROUND
+		ACTIVATE, DEACTIVATE, FAILURE, RUNINBACKGROUND, RUNINFOREGROUND, MESSAGE
 	}
 	
 	
@@ -249,6 +250,16 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     	super.onResume(multitasking);
     }
     
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+    	super.onStartCommand(Intent intent, int flags, int startId);
+    	
+        //We want this service to continue running until it is explicitly stopped
+    	fireEvent(Event.MESSAGE, "StartBackGroundActivity");
+        return START_REDELIVER_INTENT;
+    }
+
+    
     /**
      * Override method in CordovaPlugin.
      * Checks to see if it should turn off
@@ -283,6 +294,8 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     		eventName = "runinforeground"; break;
     	case RUNINBACKGROUND:
     		eventName = "runinbackground"; break;
+    	case MESSAGE:
+    		eventName = "message"; break;
     	default:
     		eventName = "failure";
     	}
