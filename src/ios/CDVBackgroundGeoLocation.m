@@ -21,14 +21,18 @@ NSString *const wALLBackgroundJsNamespace = @"window.plugins.backgroundGeoLocati
 NSString *const wALLBackgroundEventActivate = @"activate";
 NSString *const wALLBackgroundEventDeactivate = @"deactivate";
 NSString *const wALLBackgroundEventRunInBackground = @"runinbackground";
-NSString *const wALLBackgroundEventRunInForeground = @"runinforeground";
-
+NSString *const wALLBackgroundEventRunInForeground = @"runinforegroundground";
+NSString *const wALLMessage = @"message";
+NSString *const wALLEnable = @"enable";
+NSString *const wALLDisable = @"disable";
 NSString *const wALLBackgroundEventFailure = @"failure";
 
 
 @implementation CDVBackgroundGeoLocation {
     BOOL isDebugging;
     BOOL enabled;
+    BOOL isActivated;
+    BOOL isInBackGround
     BOOL isUpdatingLocation;
     BOOL stopOnTerminate;
 	
@@ -88,6 +92,10 @@ NSString *const wALLBackgroundEventFailure = @"failure";
     stationaryRegion = nil;
     isDebugging = NO;
     stopOnTerminate = NO;
+
+    enabled = NO;
+    isActivated = NO;
+    isInBackGround = NO;
 
     maxStationaryLocationAttempts   = 4;
     maxSpeedAcquistionAttempts      = 3;
@@ -250,42 +258,124 @@ NSString *const wALLBackgroundEventFailure = @"failure";
 }
 
 /**
- * Turn on background geolocation
+ * Start Background Location service from client
  */
 - (void) start:(CDVInvokedUrlCommand*)command
 {
-    enabled = YES;
-    UIApplicationState state = [[UIApplication sharedApplication] applicationState];
-
-    NSLog(@"- CDVBackgroundGeoLocation start (background? %d)", state);
-
-    [locationManager startMonitoringSignificantLocationChanges];
-    if (state == UIApplicationStateBackground) {
-        [self setPace:isMoving];
-    }
-    CDVPluginResult* result = nil;
+	[self startServiceIfNotRunning];
+	
+	CDVPluginResult* result = nil;
     result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+	
 }
+
+
 /**
- * Turn it off
+ * Start the Location service if not running
+ */
+- (void) startServiceIfNotRunning
+{
+	// check if service is enabled
+    if (!enabled) {
+    	// check if the service is activated
+     	if (isActivated) {
+     		// stop service
+     		[self stopServiceIfRunning];
+     	}
+        NSLog(@"- Can't start service before it is enabled)");
+    }
+
+    // check if the service is activated
+    if (!isActivated) {
+    	UIApplicationState state = [[UIApplication sharedApplication] applicationState];
+
+    	NSLog(@"- CDVBackgroundGeoLocation start (background? %d)", state);
+
+    	[locationManager startMonitoringSignificantLocationChanges];
+    	if (state == UIApplicationStateBackground) {
+        	[self setPace:isMoving];
+    	}
+    	isActivated = true;
+    	[self fireEvent:wALLBackgroundEventActivate withParams:NULL];
+    }
+}
+
+
+/**
+ * Stop Background Location Service from client
  */
 - (void) stop:(CDVInvokedUrlCommand*)command
 {
-    NSLog(@"- CDVBackgroundGeoLocation stop");
-    enabled = NO;
-    isMoving = NO;
 
-    [self stopUpdatingLocation];
-    [locationManager stopMonitoringSignificantLocationChanges];
-    if (stationaryRegion != nil) {
-        [locationManager stopMonitoringForRegion:stationaryRegion];
-        stationaryRegion = nil;
-    }
+    [self stopServiceIfRunning];
+    
     CDVPluginResult* result = nil;
     result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
     [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
 
+}
+
+/**
+ * Enable service (service is allowed to start if the app comes running in background)
+ */
+- (void) enable:(CDVInvokedUrlCommand*)command
+{
+
+	isEnabled = YES;
+    [self fireEvent:wALLEnable withParams:NULL];
+    
+    if (isInBackGround) {
+		// start service
+    	[self startServiceIfNotRunning];
+    } else {
+    	// stop service
+    	[self stopServiceIfRunning];
+    }
+    
+    CDVPluginResult* result = nil;
+    result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+
+}
+
+/**
+ * Disable service (service is not allowed to start if service is running it will be stopped)
+ */
+- (void) disable:(CDVInvokedUrlCommand*)command
+{
+
+	isEnabled = NO;
+    [self fireEvent:wALLDisable withParams:NULL];
+    
+   	// stop service
+   	[self stopServiceIfRunning];
+    
+    CDVPluginResult* result = nil;
+    result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+
+}
+
+/**
+ * Stop the Location service if running
+ */
+- (void) stopServiceIfRunning
+{
+    // Check if the service is running
+    if (isActivated) {
+        NSLog(@"- CDVBackgroundGeoLocation stop");
+	    isMoving = NO;
+	    isActivated = NO;
+
+    	[self stopUpdatingLocation];
+    	[locationManager stopMonitoringSignificantLocationChanges];
+    	if (stationaryRegion != nil) {
+        	[locationManager stopMonitoringForRegion:stationaryRegion];
+        	stationaryRegion = nil;
+    	}
+    	[self fireEvent:wALLBackgroundEventDeactivate withParams:NULL];
+    }
 }
 
 /**
@@ -386,11 +476,13 @@ NSString *const wALLBackgroundEventFailure = @"failure";
  */
 -(void) onSuspend:(NSNotification *) notification
 {
-    NSLog(@"- CDVBackgroundGeoLocation suspend (enabled? %d)", enabled);
+    NSLog(@"- CDVBackgroundGeoLocation suspend ");
     suspendedAt = [NSDate date];
+    isInBackGround = YES;
  	[self fireEvent:wALLBackgroundEventRunInBackground withParams:NULL];
     if (enabled) {
     	 [self fireEvent:wALLBackgroundEventActivate withParams:NULL];
+    	 [self startServiceIfNotRunning];
         // Sample incoming stationary-location candidate:  Is it within the current stationary-region?  If not, I guess we're moving.
         if (!isMoving && stationaryRegion) {
             if ([self locationAge:stationaryLocation] < (5 * 60.0)) {
@@ -403,6 +495,8 @@ NSString *const wALLBackgroundEventFailure = @"failure";
             }
         }
         [self setPace: isMoving];
+    } else {
+       	[self stopServiceIfRunning];
     }
 }
 /**@
@@ -411,11 +505,9 @@ NSString *const wALLBackgroundEventFailure = @"failure";
 -(void) onResume:(NSNotification *) notification
 {
     NSLog(@"- CDVBackgroundGeoLocation resume");
+    isInBackGround = NO;
     [self fireEvent:wALLBackgroundEventRunInForeground withParams:NULL];
-    [self fireEvent:wALLBackgroundEventDeactivate withParams:NULL];
-    if (enabled) {
-        [self stopUpdatingLocation];
-    }
+    [self stopServiceIfRunning];
 }
 
 
@@ -426,7 +518,9 @@ NSString *const wALLBackgroundEventFailure = @"failure";
 -(void) onAppTerminate
 {
     NSLog(@"- CDVBackgroundGeoLocation appTerminate");
-    if (enabled && stopOnTerminate) {
+    
+    [self stopServiceIfRunning];
+    if (isActivated && stopOnTerminate) {
         NSLog(@"- CDVBackgroundGeoLocation stoping on terminate");
 
         enabled = NO;
@@ -791,17 +885,11 @@ NSString *const wALLBackgroundEventFailure = @"failure";
  */
 - (void) fireEvent:(NSString*)event withParams:(NSString*)params
 {
-    NSString* active = [event isEqualToString:wALLBackgroundEventActivate] ? @"true" : @"false";
-
-    NSString* flag = [NSString stringWithFormat:@"%@._isActive=%@;",
-                    wALLBackgroundJsNamespace, active];
 
     NSString* fn = [NSString stringWithFormat:@"setTimeout('%@.on%@(%@)',0);",
                     wALLBackgroundJsNamespace, event, params];
 
-    NSString* js = [flag stringByAppendingString:fn];
-
-    [self.commandDelegate evalJs:js];
+    [self.commandDelegate evalJs:fn];
 }
 
 @end

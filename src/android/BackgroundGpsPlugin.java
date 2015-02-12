@@ -26,10 +26,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	
 	/** Messenger for communicating with service. */
 	Messenger mService = null;
-	/** Flag indicating whether we have called bind on the service. */
-	boolean mIsBound = false;
-	/** isInBackGround
-	boolean isInBackGround = false;
+
 	/** Some text view we are using to show state information. */
 	TextView mCallbackText;
 
@@ -38,13 +35,10 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	 */
 	final Messenger mMessenger = new Messenger(new IncomingHandler());
 
-	
-	
 	 // Event types for callbacks
 	private enum Event {
 		ACTIVATE, DEACTIVATE, FAILURE, RUNINBACKGROUND, RUNINFOREGROUND, MESSAGE, ENABLE, DISABLE
 	}
-	
 	
 	 // Plugin namespace
 	private static final String JS_NAMESPACE = "window.plugins.backgroundGeoLocation";
@@ -61,6 +55,8 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     
     private Intent updateServiceIntent;
 
+	/** Flag indicating whether we have called bind on the service. */
+	boolean isActivated = false;
     private Boolean isEnabled = false;
     private Boolean isInBackGround = false;
     
@@ -228,7 +224,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     	// check if service is enabled
     	if (isEnabled != true) {
     		// check if the service is activated
-    		if ( mIsBound == true) {
+    		if ( isActivated == true) {
     			// stop service
     			stopServiceIfRunning();
     		}
@@ -236,7 +232,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     	}
 
     	// check if the service is activated
-    	if ( mIsBound == true) {
+    	if ( isActivated == true) {
     		return TRUE;
     	}
     	
@@ -254,7 +250,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
         updateServiceIntent.putExtra("stopOnTerminate", stopOnTerminate);
         
         activity.bindService(updateServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
-        mIsBound = true;
+        isActivated = true;
         fireEvent(Event.ACTIVATE, null);
         return TRUE;
     }
@@ -267,9 +263,9 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
         Activity activity = this.cordova.getActivity();
 
     	// Check if the service is running
-    	if (mIsBound == true) {
+    	if (isActivated == true) {
     		activity.unbindService(mConnection);
-    		mIsBound = false;
+    		isActivated = false;
     		fireEvent(Event.DEACTIVATE, null);
     		return TRUE;
     	} else {
@@ -284,7 +280,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     	isEnabled = true;
     	fireEvent(Event.ENABLE, null);
 
-    	if (mIsBound == true) {
+    	if (isInBackGround == true) {
     		// start service
     		startServiceIfNotRunning();
     	} else {
