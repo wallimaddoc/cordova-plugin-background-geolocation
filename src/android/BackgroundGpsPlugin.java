@@ -28,16 +28,56 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	Messenger mService = null;
 	/** Flag indicating whether we have called bind on the service. */
 	boolean mIsBound = false;
+	/** isInBackGround
+	boolean isInBackGround = false;
 	/** Some text view we are using to show state information. */
 	TextView mCallbackText;
 
-    public static final String SendMessagesToLocationService = "SendMessagesToLocationService";
-    public static final String ErrorConnectToLocationService = "ErrorConnectToLocationService";
-    public static final String DisconnectFromLocationService = "DisconnectFromLocationService";
-    public static final String GetConnectionToLocationService = "GetConnectionToLocationService";
-    public static final String GetUpdateFromLocationService = "GetUpdateFromLocationService";
-    public static final String ErrorConnectToLocationService = "ErrorConnectToLocationService";
+	/**
+	 * Target we publish for clients to send messages to IncomingHandler.
+	 */
+	final Messenger mMessenger = new Messenger(new IncomingHandler());
 
+	
+	
+	 // Event types for callbacks
+	private enum Event {
+		ACTIVATE, DEACTIVATE, FAILURE, RUNINBACKGROUND, RUNINFOREGROUND, MESSAGE, ENABLE, DISABLE
+	}
+	
+	
+	 // Plugin namespace
+	private static final String JS_NAMESPACE = "window.plugins.backgroundGeoLocation";
+	
+    private static final String TAG = "BackgroundGpsPlugin";
+    
+    public static final String ACTION_START = "start";
+    public static final String ACTION_STOP = "stop";
+    public static final String ACTION_ENABLE = "enable";
+    public static final String ACTION_DISABLE = "disable";
+    public static final String ACTION_CONFIGURE = "configure";
+    public static final String ACTION_SET_CONFIG = "setConfig";
+    
+    
+    private Intent updateServiceIntent;
+
+    private Boolean isEnabled = false;
+
+    private String url;
+    private String params;
+    private String headers;
+    private String stationaryRadius = "30";
+    private String desiredAccuracy = "100";
+    private String distanceFilter = "30";
+    private String locationTimeout = "60";
+    private String isDebugging = "false";
+    private String notificationTitle = "Background tracking";
+    private String notificationText = "ENABLED";
+    private String stopOnTerminate = "false";
+    private String TRUE = "true";
+    private String ERROR_1 = "Can't start service before it is enabled";
+
+    
 	/**
 	 * Handler of incoming messages from service.
 	 */
@@ -48,11 +88,11 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 				String msg_text;
 				switch (msg.what) {
 				case LocationUpdateService.MSG_SET_VALUE:
-					fireEvent(Event.MESSAGE, GetConnectionToLocationService+msg.what);
+					fireEvent(Event.MESSAGE, "4"+msg.what);
 					//  mCallbackText.setText("Received from service: " + msg.arg1);
 					break;
 				case LocationUpdateService.MSG_UPDATE_LOCATION:
-					fireEvent(Event.MESSAGE, GetUpdateFromLocationService+msg.what);
+					fireEvent(Event.MESSAGE, "5"+msg.what);
 					msg_text = msg.obj.toString();
 					geolocationfound(msg_text);
 					break;
@@ -60,16 +100,10 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 					super.handleMessage(msg);
 				}
 			} catch (Exception e) {
-				fireEvent(Event.MESSAGE, ErrorConnectToLocationService+msg.what);
+				fireEvent(Event.MESSAGE, "2"+msg.what);
 			}
 		}
 	}
-
-	/**
-	 * Target we publish for clients to send messages to IncomingHandler.
-	 */
-	final Messenger mMessenger = new Messenger(new IncomingHandler());
-	
 
 	/**
 	 * Class for interacting with the main interface of the service.
@@ -95,7 +129,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	    		// Give it some value as an example.
 	    		msg = Message.obtain(null,LocationUpdateService.MSG_SET_VALUE, this.hashCode(), 0);
 	    		mService.send(msg);
-				fireEvent(Event.MESSAGE, SendMessagesToLocationService);
+				fireEvent(Event.MESSAGE, "1");
 
 	        } catch (RemoteException e) {
 	            // In this case the service has crashed before we could even
@@ -103,7 +137,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	            // disconnected (and then reconnected if it can be restarted)
 	            // so there is no need to do anything here.
 	        } catch (Exception e) {
-				fireEvent(Event.MESSAGE, ErrorConnectToLocationService);
+				fireEvent(Event.MESSAGE, "2");
 	        	// do nothing
 	        }
 
@@ -114,7 +148,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	        // unexpectedly disconnected -- that is, its process crashed.
 	        mService = null;
 	        //  mCallbackText.setText("Disconnected.");
-			fireEvent(Event.MESSAGE, DisconnectFromLocationService);
+			fireEvent(Event.MESSAGE, "3");
 	    }
 	};
 	
@@ -123,91 +157,33 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	 * @author erik
 	 * from http://developer.android.com/reference/android/app/Service.html
 	 */
-	
-	 // Event types for callbacks
-	private enum Event {
-		ACTIVATE, DEACTIVATE, FAILURE, RUNINBACKGROUND, RUNINFOREGROUND, MESSAGE
-	}
-	
-	
-	 // Plugin namespace
-	private static final String JS_NAMESPACE = "window.plugins.backgroundGeoLocation";
-	
-    private static final String TAG = "BackgroundGpsPlugin";
-    
-    public static final String ACTION_START = "start";
-    public static final String ACTION_STOP = "stop";
-    public static final String ACTION_CONFIGURE = "configure";
-    public static final String ACTION_SET_CONFIG = "setConfig";
-    
-    
-    private Intent updateServiceIntent;
 
-    private Boolean isEnabled = false;
-
-    private String url;
-    private String params;
-    private String headers;
-    private String stationaryRadius = "30";
-    private String desiredAccuracy = "100";
-    private String distanceFilter = "30";
-    private String locationTimeout = "60";
-    private String isDebugging = "false";
-    private String notificationTitle = "Background tracking";
-    private String notificationText = "ENABLED";
-    private String stopOnTerminate = "false";
-
+    
     public boolean execute(String action, JSONArray data, CallbackContext callbackContext) {
-        Activity activity = this.cordova.getActivity();
-        Boolean result = false;
-        updateServiceIntent = new Intent(activity, LocationUpdateService.class);
+        String result;
 
-        if (ACTION_START.equalsIgnoreCase(action) && !isEnabled) {
-            result = true;
-            if (params == null || headers == null || url == null) {
-                callbackContext.error("Call configure before calling start");
-            } else {
-            	if ( mIsBound == true) {
-            		callbackContext.success();
-            		return true;
-            	}
-                callbackContext.success();
-                updateServiceIntent.putExtra("url", url);
-                updateServiceIntent.putExtra("params", params);
-                updateServiceIntent.putExtra("headers", headers);
-                updateServiceIntent.putExtra("stationaryRadius", stationaryRadius);
-                updateServiceIntent.putExtra("desiredAccuracy", desiredAccuracy);
-                updateServiceIntent.putExtra("distanceFilter", distanceFilter);
-                updateServiceIntent.putExtra("locationTimeout", locationTimeout);
-                updateServiceIntent.putExtra("desiredAccuracy", desiredAccuracy);
-                updateServiceIntent.putExtra("isDebugging", isDebugging);
-                updateServiceIntent.putExtra("notificationTitle", notificationTitle);
-                updateServiceIntent.putExtra("notificationText", notificationText);
-                updateServiceIntent.putExtra("stopOnTerminate", stopOnTerminate);
+        if (ACTION_START.equalsIgnoreCase(action)) {
+        	
+        	// start location service
+        	result = startServiceIfNotRunning();
 
-                //activity.startService(updateServiceIntent);
-                
-                activity.bindService(updateServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
-                mIsBound = true;
-                
-                fireEvent(Event.ACTIVATE, null);
-                isEnabled = true;
-            }
         } else if (ACTION_STOP.equalsIgnoreCase(action)) {
-        	if (mIsBound) {
-        		isEnabled = false;
-        		result = true;
-        		//activity.stopService(updateServiceIntent);
-        		activity.unbindService(mConnection);
-        		fireEvent(Event.DEACTIVATE, null);
-        		mIsBound = false;
-        		callbackContext.success();
-        	} else {
-        		callbackContext.success();
-        		return true;
-        	}
+        	
+        	// stop location service
+        	result = stopServiceIfRunning();
+        	
+        } else if (ACTION_ENABLE.equalsIgnoreCase(action)) {
+        	
+        	// enable service (service is allowed to start if the app comes running in background)
+        	result = enableService();
+        	
+        } else if (ACTION_DISABLE.equalsIgnoreCase(action)) {
+        	
+        	// disable service (service is not allowed to start if service is running it will be stopped)
+        	result = disableService();
+        	
         } else if (ACTION_CONFIGURE.equalsIgnoreCase(action)) {
-            result = true;
+            result = TRUE;
             try {
                 // Params.
                 //    0       1       2           3               4                5               6            7           8                9               10              11
@@ -224,37 +200,141 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
                 this.notificationText = data.getString(9);
                 this.stopOnTerminate = data.getString(11);
             } catch (JSONException e) {
-                callbackContext.error("authToken/url required as parameters: " + e.getMessage());
+            	result = "authToken/url required as parameters: " + e.getMessage();
             }
         } else if (ACTION_SET_CONFIG.equalsIgnoreCase(action)) {
-            result = true;
+            result = TRUE;
             // TODO reconfigure Service
-            callbackContext.success();
+        }
+        
+        if (TRUE.equalsIgnoreCase(result)) {
+        	callbackContext.success();
+        	return true;
+        } else {
+        	callbackContext.error(result);
         }
 
         return result;
     }
 
     /**
-    * Called when the system is about to start resuming a previous activity.
+     * Start the Location service if not running
+     */
+    public String startServiceIfNotRunning() {
+
+        Activity activity = this.cordova.getActivity();
+        updateServiceIntent = new Intent(activity, LocationUpdateService.class);
+
+    	// check if service is enabled
+    	if (isEnabled != true) {
+    		// check if the service is activated
+    		if ( mIsBound == true) {
+    			// stop service
+    			stopServiceIfRunning();
+    		}
+    		return ERROR_1;
+    	}
+
+    	// check if the service is activated
+    	if ( mIsBound == true) {
+    		return TRUE;
+    	}
+    	
+        updateServiceIntent.putExtra("url", url);
+        updateServiceIntent.putExtra("params", params);
+        updateServiceIntent.putExtra("headers", headers);
+        updateServiceIntent.putExtra("stationaryRadius", stationaryRadius);
+        updateServiceIntent.putExtra("desiredAccuracy", desiredAccuracy);
+        updateServiceIntent.putExtra("distanceFilter", distanceFilter);
+        updateServiceIntent.putExtra("locationTimeout", locationTimeout);
+        updateServiceIntent.putExtra("desiredAccuracy", desiredAccuracy);
+        updateServiceIntent.putExtra("isDebugging", isDebugging);
+        updateServiceIntent.putExtra("notificationTitle", notificationTitle);
+        updateServiceIntent.putExtra("notificationText", notificationText);
+        updateServiceIntent.putExtra("stopOnTerminate", stopOnTerminate);
+        
+        activity.bindService(updateServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
+        mIsBound = true;
+        fireEvent(Event.ACTIVATE, null);
+        return TRUE;
+    }
+    
+    /**
+     * Stop the Location service if running
+     */
+    public String stopServiceIfRunning() {
+
+        Activity activity = this.cordova.getActivity();
+
+    	// Check if the service is running
+    	if (mIsBound == true) {
+    		activity.unbindService(mConnection);
+    		mIsBound = false;
+    		fireEvent(Event.DEACTIVATE, null);
+    		return TRUE;
+    	} else {
+    		return TRUE;
+    	}
+    }
+
+    /**
+     * Enable service (service is allowed to start if the app comes running in background)
+     */
+    public String enableService() {
+    	isEnabled = true;
+    	fireEvent(Event.ENABLE, null);
+
+    	if (mIsBound == true) {
+    		// start service
+    		startServiceIfNotRunning();
+    	} else {
+    		// stop service
+    		stopServiceIfRunning();
+    	}
+    	return TRUE;
+    }
+    
+    /**
+     * Disable service (service is not allowed to start if service is running it will be stopped)
+     */
+    public String disableService() {
+    	isEnabled = false;
+    	fireEvent(Event.DISABLE, null);
+
+    	// stop service
+    	stopServiceIfRunning();
+    	return TRUE;
+    }
+    
+    /**
+    * Called when app switch to background
     *
     * @param multitasking
     * Flag indicating if multitasking is turned on for app
     */
     @Override
     public void onPause(boolean multitasking) {
+    	isInBackGround = true;
     	fireEvent(Event.RUNINBACKGROUND, null);
+    	if (isEnabled == true) {
+    		startServiceIfNotRunning();
+    	} else {
+    		stopServiceIfRunning();
+    	}
     	super.onPause(multitasking);
     }
+    
     /**
-    * Called when the activity will start interacting with the user.
+    * Called when app starts again
     *
     * @param multitasking
     * Flag indicating if multitasking is turned on for app
     */
     @Override
     public void onResume(boolean multitasking) {
+    	isInBackGround = false;
     	fireEvent(Event.RUNINFOREGROUND, null);
+		stopServiceIfRunning();
     	super.onResume(multitasking);
     }
     
@@ -262,13 +342,10 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
      * Override method in CordovaPlugin.
      * Checks to see if it should turn off
      */
+    @Override
     public void onDestroy() {
-        Activity activity = this.cordova.getActivity();
-    	fireEvent(Event.DEACTIVATE, null);
-
-        if(isEnabled && stopOnTerminate.equalsIgnoreCase("true")) {
-            activity.stopService(updateServiceIntent);
-        }
+        stopServiceIfRunning();
+        super.onDestroy();
     }
     
     /**
@@ -292,6 +369,10 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     		eventName = "runinforeground"; break;
     	case RUNINBACKGROUND:
     		eventName = "runinbackground"; break;
+    	case ENABLE:
+    		eventName = "enable"; break;
+    	case DISABLE:
+    		eventName = "disable"; break;
     	case MESSAGE:
     		eventName = "message"; break;
     	default:

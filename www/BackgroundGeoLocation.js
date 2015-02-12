@@ -20,15 +20,25 @@ module.exports = {
     onruninforeground : function () {},
 
     /**
-     * Called when the background mode has been activated.
+     * Called when location service is activated
      */
     onactivate : function () {},
 
     /**
-     * Called when the background mode has been deaktivated.
+     * Called when location service is deactivated
      */
     ondeactivate : function () {},
-    
+
+    /**
+     * Called when location service is enabled (service is allowed to start)
+     */
+    onenable : function () {},
+
+    /**
+     * Called when location service is disabled (service is not allowed to start)
+     */
+    ondisable : function () {},
+
     /**
      * Called when the background mode has been deaktivated.
      */
@@ -76,6 +86,21 @@ module.exports = {
             'stop',
             []);
     },
+    enable: function(success, failure, config) {
+        exec(success || function() {},
+            failure || function() {},
+            'BackgroundGeoLocation',
+            'enable',
+            []);
+    },
+    disable: function(success, failure, config) {
+        exec(success || function() {},
+            failure || function() {},
+            'BackgroundGeoLocation',
+            'disable',
+            []);
+    },
+
     finish: function(success, failure) {
         exec(success || function() {},
             failure || function() {},
