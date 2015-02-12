@@ -62,7 +62,8 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     private Intent updateServiceIntent;
 
     private Boolean isEnabled = false;
-
+    private Boolean isInBackGround = false;
+    
     private String url;
     private String params;
     private String headers;
@@ -160,7 +161,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 
     
     public boolean execute(String action, JSONArray data, CallbackContext callbackContext) {
-        String result;
+        String result = stopOnTerminate;
 
         if (ACTION_START.equalsIgnoreCase(action)) {
         	
@@ -212,9 +213,8 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
         	return true;
         } else {
         	callbackContext.error(result);
+        	return false;
         }
-
-        return result;
     }
 
     /**
