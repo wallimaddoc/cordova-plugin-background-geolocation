@@ -74,6 +74,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     private String TRUE = "true";
     private String ERROR_1 = "Can't start service before it is enabled";
 
+    private  CallbackContext updateCallBack;
     
 	/**
 	 * Handler of incoming messages from service.
@@ -196,6 +197,11 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
                 this.notificationTitle = data.getString(8);
                 this.notificationText = data.getString(9);
                 this.stopOnTerminate = data.getString(11);
+                
+                // Store callbackContext in order to send update information back to javascript
+                // In this callbackContext the functions callbackFn, failureFn for the javascript callbacks
+                // are included
+                updateCallBack = callbackContext;
             } catch (JSONException e) {
             	result = "authToken/url required as parameters: " + e.getMessage();
             }
@@ -405,6 +411,16 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     			webView.loadUrl("javascript:" + js);
     		}
     	});
+    	
+    	try {
+    		// Send update information over javascript callback functions
+    		JSONObject data = new JSONObject(params);
+    		PluginResult result = new PluginResult(PluginResult.Status.OK, data);
+    		result.setKeepCallback(true);
+    		updateCallBack.sendPluginResult(result);
+        } catch (JSONException e) {
+            Log.e(TAG, e.toString());
+        }
   
     }
 }
