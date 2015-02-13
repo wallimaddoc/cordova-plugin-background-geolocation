@@ -92,7 +92,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 					break;
 				case LocationUpdateService.MSG_UPDATE_LOCATION:
 					fireEvent(Event.MESSAGE, "5"+msg.what);
-					msg_text = msg.obj.toString();
+					msg_text = (String) msg.obj;
 					geolocationfound(msg_text);
 					break;
 				default:
@@ -203,6 +203,11 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
                 // In this callbackContext the functions callbackFn, failureFn for the javascript callbacks
                 // are included
                 updateCallBack = callbackContext;
+        		PluginResult result = new PluginResult(PluginResult.Status.OK);
+        		result.setKeepCallback(true);
+        		updateCallBack.sendPluginResult(result);
+        		return true;
+                
             } catch (JSONException e) {
             	result = "authToken/url required as parameters: " + e.getMessage();
             }
@@ -403,22 +408,28 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
      * updateSettings if set or default settings
      */
     private void geolocationfound(String params) {
-     	String fn = String.format("setTimeout('%s.callbackFn(%s)',0);",
-    			JS_NAMESPACE, '"'+params+'"');
-    	final String js = fn;
-    	cordova.getActivity().runOnUiThread(new Runnable() {
-    		@Override
-    		public void run() {
-    			webView.loadUrl("javascript:" + js);
-    		}
-    	});
-    	
     	try {
+    		String fn = String.format("setTimeout('%s.callbackFn(%s)',0);",
+    				JS_NAMESPACE, '"'+params+'"');
+    		final String js = fn;
+    		cordova.getActivity().runOnUiThread(new Runnable() {
+    			@Override
+    			public void run() {
+    				webView.loadUrl("javascript:" + js);
+    			}
+    		});
+    	
+    		String testString  = "{\"erik\":\"Says hallo\",\"latitude\":49.5,\"longitude\":6.9}";
+    		fireEvent(Event.MESSAGE, testString);
+    		 
     		// Send update information over javascript callback functions
-    		JSONObject data = new JSONObject(params);
+    		JSONObject data = new JSONObject(testString);
+    		fireEvent(Event.MESSAGE, testString);
     		PluginResult result = new PluginResult(PluginResult.Status.OK, data);
     		result.setKeepCallback(true);
     		updateCallBack.sendPluginResult(result);
+    		fireEvent(Event.MESSAGE, testString);
+
         } catch (JSONException e) {
             Log.e(TAG, e.toString());
         }

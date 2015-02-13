@@ -114,8 +114,9 @@ public class LocationUpdateService extends Service implements LocationListener {
         			mValue = msg.arg1;
         			for (int i=mClients.size()-1; i>=0; i--) {
         				try {
-        					mClients.get(i).send(Message.obtain(null,
-        							MSG_SET_VALUE, mValue, 0));
+        					mClients.get(i).send(Message.obtain(null,MSG_SET_VALUE, mValue, 0));
+        					mClients.get(i).send(Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 0,"Hallo"));
+
         				} catch (RemoteException e) {
         					// The client is dead.  Remove it from the list;
         					// we are going through the list from back to front
@@ -505,9 +506,22 @@ public class LocationUpdateService extends Service implements LocationListener {
         lastLocation = location;
         persistLocation(location);
 
+		for (int i=mClients.size()-1; i>=0; i--) {
+			try {
+				mClients.get(i).send(Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 0,location.toString()));
+
+			} catch (RemoteException e) {
+				// The client is dead.  Remove it from the list;
+				// we are going through the list from back to front
+				// so this is safe to do inside the loop.
+				mClients.remove(i);
+			}
+		}
+
+        
         if (this.isNetworkConnected()) {
             Log.d(TAG, "Scheduling location network post");
-            schedulePostLocations();
+           // schedulePostLocations();
         } else {
             Log.d(TAG, "Network unavailable, waiting for now");
         }
