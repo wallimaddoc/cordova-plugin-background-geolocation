@@ -30,7 +30,7 @@ NSString *const wALLBackgroundEventFailure = @"failure";
 
 @implementation CDVBackgroundGeoLocation {
     BOOL isDebugging;
-    BOOL enabled;
+    BOOL isEnabled;
     BOOL isActivated;
     BOOL isInBackGround
     BOOL isUpdatingLocation;
@@ -93,7 +93,7 @@ NSString *const wALLBackgroundEventFailure = @"failure";
     isDebugging = NO;
     stopOnTerminate = NO;
 
-    enabled = NO;
+    isEnabled = NO;
     isActivated = NO;
     isInBackGround = NO;
 
@@ -277,7 +277,7 @@ NSString *const wALLBackgroundEventFailure = @"failure";
 - (void) startServiceIfNotRunning
 {
 	// check if service is enabled
-    if (!enabled) {
+    if (!isEnabled) {
     	// check if the service is activated
      	if (isActivated) {
      		// stop service
@@ -472,7 +472,7 @@ NSString *const wALLBackgroundEventFailure = @"failure";
 }
 
 /**
- * Suspend.  Turn on passive location services
+ * Suspend.  App comes to background
  */
 -(void) onSuspend:(NSNotification *) notification
 {
@@ -480,7 +480,7 @@ NSString *const wALLBackgroundEventFailure = @"failure";
     suspendedAt = [NSDate date];
     isInBackGround = YES;
  	[self fireEvent:wALLBackgroundEventRunInBackground withParams:NULL];
-    if (enabled) {
+    if (isEnabled) {
     	 [self fireEvent:wALLBackgroundEventActivate withParams:NULL];
     	 [self startServiceIfNotRunning];
         // Sample incoming stationary-location candidate:  Is it within the current stationary-region?  If not, I guess we're moving.
@@ -500,7 +500,7 @@ NSString *const wALLBackgroundEventFailure = @"failure";
     }
 }
 /**@
- * Resume.  Turn background off
+ * Resume.   App comes to foreground again
  */
 -(void) onResume:(NSNotification *) notification
 {
@@ -523,7 +523,7 @@ NSString *const wALLBackgroundEventFailure = @"failure";
     if (isActivated && stopOnTerminate) {
         NSLog(@"- CDVBackgroundGeoLocation stoping on terminate");
 
-        enabled = NO;
+        isEnabled = NO;
         isMoving = NO;
 
         [self stopUpdatingLocation];
