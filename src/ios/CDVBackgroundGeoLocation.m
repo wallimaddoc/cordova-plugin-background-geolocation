@@ -32,7 +32,7 @@ NSString *const wALLBackgroundEventFailure = @"failure";
     BOOL isDebugging;
     BOOL isEnabled;
     BOOL isActivated;
-    BOOL isInBackGround
+    BOOL isInBackGround;
     BOOL isUpdatingLocation;
     BOOL stopOnTerminate;
 	
