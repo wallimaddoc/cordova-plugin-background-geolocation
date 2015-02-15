@@ -123,6 +123,8 @@ public class LocationUpdateService extends Service implements LocationListener {
         					msg = Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 1);
         		    		msg.obj = bundle;
         					mClients.get(i).send(msg);
+        					
+        					startPostLocation();
 
         				} catch (RemoteException e) {
         					// The client is dead.  Remove it from the list;
@@ -539,6 +541,7 @@ public class LocationUpdateService extends Service implements LocationListener {
         
         if (this.isNetworkConnected()) {
             Log.d(TAG, "Scheduling location network post");
+            startPostLocation();
            // schedulePostLocations();
         } else {
             Log.d(TAG, "Network unavailable, waiting for now");
@@ -798,14 +801,21 @@ public class LocationUpdateService extends Service implements LocationListener {
 
             String message_string = location.toString();
             
+			Bundle bundle = new Bundle();
+			bundle.putString("key", message_string);
+
+			Message msg = Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 1);
+    		msg.obj = bundle;
+
+            
             for (int i=mClients.size()-1; i>=0; i--) {
                 try {
-                    mClients.get(i).send(Message.obtain(null,MSG_UPDATE_LOCATION, message_string));
+                    mClients.get(i).send(msg);
                 } catch (RemoteException e) {
                     // The client is dead.  Remove it from the list;
                     // we are going through the list from back to front
                     // so this is safe to do inside the loop.
-                    mClients.remove(i);
+                    //mClients.remove(i);
                 }
             }
             //StringEntity se = new StringEntity(params.toString());
@@ -872,6 +882,55 @@ public class LocationUpdateService extends Service implements LocationListener {
     public void onTaskRemoved(Intent rootIntent) {
         this.stopSelf();
         super.onTaskRemoved(rootIntent);
+    }
+    
+    /**
+     * Send update information as JSON String to client (aktivity)
+     */
+    protected void startPostLocation() {
+    	
+    	try {
+			Bundle bundle = new Bundle();
+			bundle.putString("key", "Start Location");
+
+			Message msg = Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 1);
+    		msg.obj = bundle;
+            for (int i=mClients.size()-1; i>=0; i--) {
+                try {
+                    mClients.get(i).send(msg);
+                } catch (RemoteException e) {
+                    // The client is dead.  Remove it from the list;
+                    // we are going through the list from back to front
+                    // so this is safe to do inside the loop.
+                    //mClients.remove(i);
+                }
+            }
+
+    		Log.d(TAG, "Executing PostLocationTask#doInBackground");
+    		LocationDAO locationDAO = DAOFactory.createLocationDAO(LocationUpdateService.this.getApplicationContext());
+    		for (com.tenforwardconsulting.cordova.bgloc.data.Location savedLocation : locationDAO.getAllLocations()) {
+    			Log.d(TAG, "Posting saved location");
+    			if (postLocation(savedLocation, locationDAO)) {
+    				locationDAO.deleteLocation(savedLocation);
+    			}
+    		}
+    	} catch (Exception e) {
+			Bundle bundle = new Bundle();
+			bundle.putString("key", "LocationUpdateService Exception: "+e.getMessage());
+
+			Message msg = Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 1);
+    		msg.obj = bundle;
+            for (int i=mClients.size()-1; i>=0; i--) {
+                try {
+                    mClients.get(i).send(msg);
+                } catch (RemoteException e2) {
+                    // The client is dead.  Remove it from the list;
+                    // we are going through the list from back to front
+                    // so this is safe to do inside the loop.
+                    //mClients.remove(i);
+                }
+            }
+    	}
     }
 
     private class PostLocationTask extends AsyncTask<Object, Integer, Boolean> {
