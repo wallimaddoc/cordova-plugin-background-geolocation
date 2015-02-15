@@ -22,6 +22,9 @@ import android.content.ComponentName;
 import android.os.IBinder;
 import android.os.RemoteException;
 
+import java.lang.Exception;
+import android.os.Bundle;
+
 public class BackgroundGpsPlugin extends CordovaPlugin {
 	
 	
@@ -87,19 +90,23 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 				String msg_text;
 				switch (msg.what) {
 				case LocationUpdateService.MSG_SET_VALUE:
-					fireEvent(Event.MESSAGE, "4"+msg.what);
+					fireEvent(Event.MESSAGE, "4"+ msg.what+msg.arg1+msg.arg2);
 					//  mCallbackText.setText("Received from service: " + msg.arg1);
 					break;
 				case LocationUpdateService.MSG_UPDATE_LOCATION:
-					fireEvent(Event.MESSAGE, "5"+msg.what);
-					msg_text = (String) msg.obj;
+					fireEvent(Event.MESSAGE, "5"+ msg.what+msg.arg1+msg.arg2);
+					Bundle bundle = (Bundle) msg.obj;
+					msg_text = (String) bundle.getString("key");
+
 					geolocationfound(msg_text);
 					break;
 				default:
 					super.handleMessage(msg);
 				}
 			} catch (Exception e) {
-				fireEvent(Event.MESSAGE, "2"+msg.what);
+
+				geolocationfound(e.getMessage());
+				fireEvent(Event.MESSAGE, "2"+msg.what+msg.arg1+msg.arg2);
 			}
 		}
 	}
@@ -128,15 +135,26 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
 	    		// Give it some value as an example.
 	    		msg = Message.obtain(null,LocationUpdateService.MSG_SET_VALUE, this.hashCode(), 0);
 	    		mService.send(msg);
-				fireEvent(Event.MESSAGE, "1");
+				Bundle bundle = new Bundle();
+				bundle.putString("key", notificationText);
+
+	    		msg = Message.obtain(null,LocationUpdateService.MSG_SET_VALUE, this.hashCode(), 3);
+	    		msg.obj = bundle;
+	    		mService.send(msg);
+	    		fireEvent(Event.MESSAGE, "1");
 
 	        } catch (RemoteException e) {
+				fireEvent(Event.MESSAGE, "3");
+	        	geolocationfound(e.getMessage());
+
 	            // In this case the service has crashed before we could even
 	            // do anything with it; we can count on soon being
 	            // disconnected (and then reconnected if it can be restarted)
 	            // so there is no need to do anything here.
 	        } catch (Exception e) {
 				fireEvent(Event.MESSAGE, "2");
+	        	geolocationfound(e.getMessage());
+
 	        	// do nothing
 	        }
 
@@ -203,9 +221,9 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
                 // In this callbackContext the functions callbackFn, failureFn for the javascript callbacks
                 // are included
                 updateCallBack = callbackContext;
-        		PluginResult result = new PluginResult(PluginResult.Status.OK);
-        		result.setKeepCallback(true);
-        		updateCallBack.sendPluginResult(result);
+        		PluginResult result_config = new PluginResult(PluginResult.Status.OK);
+        		result_config.setKeepCallback(true);
+        		updateCallBack.sendPluginResult(result_config);
         		return true;
                 
             } catch (JSONException e) {
@@ -415,20 +433,17 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     		cordova.getActivity().runOnUiThread(new Runnable() {
     			@Override
     			public void run() {
-    				webView.loadUrl("javascript:" + js);
+    				//webView.loadUrl("javascript:" + js);
     			}
     		});
     	
     		String testString  = "{\"erik\":\"Says hallo\",\"latitude\":49.5,\"longitude\":6.9}";
-    		fireEvent(Event.MESSAGE, testString);
-    		 
+    		testString =  "{\"erik\":\""+params+"\"}";
     		// Send update information over javascript callback functions
     		JSONObject data = new JSONObject(testString);
-    		fireEvent(Event.MESSAGE, testString);
     		PluginResult result = new PluginResult(PluginResult.Status.OK, data);
     		result.setKeepCallback(true);
     		updateCallBack.sendPluginResult(result);
-    		fireEvent(Event.MESSAGE, testString);
 
         } catch (JSONException e) {
             Log.e(TAG, e.toString());

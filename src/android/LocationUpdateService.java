@@ -58,6 +58,8 @@ import android.util.Log;
 import android.widget.Toast;
 
 import static java.lang.Math.*;
+import java.lang.Exception;
+import android.os.Bundle;
 
 public class LocationUpdateService extends Service implements LocationListener {
 	
@@ -115,14 +117,30 @@ public class LocationUpdateService extends Service implements LocationListener {
         			for (int i=mClients.size()-1; i>=0; i--) {
         				try {
         					mClients.get(i).send(Message.obtain(null,MSG_SET_VALUE, mValue, 0));
-        					mClients.get(i).send(Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 0,"Hallo"));
+        					Bundle bundle = new Bundle();
+        					bundle.putString("key", TAG);
+
+        					msg = Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 1);
+        		    		msg.obj = bundle;
+        					mClients.get(i).send(msg);
 
         				} catch (RemoteException e) {
         					// The client is dead.  Remove it from the list;
         					// we are going through the list from back to front
         					// so this is safe to do inside the loop.
-        					mClients.remove(i);
+        					//mClients.remove(i);
+        					mClients.get(i).send(Message.obtain(null,MSG_SET_VALUE, mValue, 9));
+
+        				} catch (Exception e) {
+        					// The client is dead.  Remove it from the list;
+        					// we are going through the list from back to front
+        					// so this is safe to do inside the loop.
+        					//mClients.remove(i);
+        					mClients.get(i).send(Message.obtain(null,MSG_SET_VALUE, mValue, 8));
+
         				}
+
+        				
         			}
         			break;
         		default:
