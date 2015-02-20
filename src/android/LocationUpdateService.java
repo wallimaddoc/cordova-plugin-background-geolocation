@@ -98,6 +98,14 @@ public class LocationUpdateService extends Service implements LocationListener {
 
 
     /**
+     * Command to service to find new location. This can be sent to the
+     * clients to supply a new value, and will be sent by the service to
+     * any registered clients with the new value.
+     */
+    static final int MSG_UPDATE_LOCATION_TEST = 5;
+
+    
+    /**
      * Handler of incoming messages from clients.
      */
     class IncomingHandler extends Handler {
@@ -120,7 +128,7 @@ public class LocationUpdateService extends Service implements LocationListener {
         					Bundle bundle = new Bundle();
         					bundle.putString("key", TAG);
 
-        					msg = Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 1);
+        					msg = Message.obtain(null,MSG_UPDATE_LOCATION_TEST, mValue, 1);
         		    		msg.obj = bundle;
         					mClients.get(i).send(msg);
         					
@@ -526,19 +534,6 @@ public class LocationUpdateService extends Service implements LocationListener {
         lastLocation = location;
         persistLocation(location);
 
-		for (int i=mClients.size()-1; i>=0; i--) {
-			try {
-				mClients.get(i).send(Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 0,location.toString()));
-
-			} catch (RemoteException e) {
-				// The client is dead.  Remove it from the list;
-				// we are going through the list from back to front
-				// so this is safe to do inside the loop.
-				mClients.remove(i);
-			}
-		}
-
-        
         if (this.isNetworkConnected()) {
             Log.d(TAG, "Scheduling location network post");
             startPostLocation();
@@ -893,7 +888,7 @@ public class LocationUpdateService extends Service implements LocationListener {
 			Bundle bundle = new Bundle();
 			bundle.putString("key", "Start Location");
 
-			Message msg = Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 1);
+			Message msg = Message.obtain(null,MSG_UPDATE_LOCATION_TEST, mValue, 1);
     		msg.obj = bundle;
             for (int i=mClients.size()-1; i>=0; i--) {
                 try {
@@ -918,7 +913,7 @@ public class LocationUpdateService extends Service implements LocationListener {
 			Bundle bundle = new Bundle();
 			bundle.putString("key", "LocationUpdateService Exception: "+e.getMessage());
 
-			Message msg = Message.obtain(null,MSG_UPDATE_LOCATION, mValue, 1);
+			Message msg = Message.obtain(null,MSG_UPDATE_LOCATION_TEST, mValue, 1);
     		msg.obj = bundle;
             for (int i=mClients.size()-1; i>=0; i--) {
                 try {
