@@ -291,6 +291,7 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
         activity.bindService(updateServiceIntent, mConnection, Context.BIND_AUTO_CREATE);
         isActivated = true;
         fireEvent(Event.ACTIVATE, null);
+        activity.startService(updateServiceIntent);
         return TRUE;
     }
     
@@ -306,6 +307,9 @@ public class BackgroundGpsPlugin extends CordovaPlugin {
     		activity.unbindService(mConnection);
     		isActivated = false;
     		fireEvent(Event.DEACTIVATE, null);
+    		
+    		updateServiceIntent = new Intent(activity, LocationUpdateService.class);
+    		activity.stopService(updateServiceIntent);
     		return TRUE;
     	} else {
     		return TRUE;
